@@ -15,6 +15,7 @@
   --bg:#FAF8FB; --surface:#FFFFFF; --panel:#F3EEF5;
   --line:#E7DFEB; --line-2:#D3C6DA;
   --accent:#7B2482; --accent-soft:#F5EAF7; --on-accent:#FFFFFF;
+  --ok:#1E7A55; --ok-soft:#E4F2EB; --bad:#B3261E;
   --shadow:0 1px 2px rgba(26,20,32,.06), 0 8px 24px -16px rgba(26,20,32,.28);
   --shadow-lg:0 24px 60px -24px rgba(26,20,32,.45);
   --r:10px;
@@ -27,6 +28,7 @@
     --bg:#131019; --surface:#1C1623; --panel:#241C2E;
     --line:#332941; --line-2:#463857;
     --accent:#C468CD; --accent-soft:#2C1C34; --on-accent:#1B1022;
+    --ok:#6FD3A6; --ok-soft:#173227; --bad:#F2887F;
     --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -16px rgba(0,0,0,.8);
     --shadow-lg:0 24px 60px -24px rgba(0,0,0,.9);
   }
@@ -35,7 +37,7 @@
 [hidden]{display:none!important}
 body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
 img{max-width:100%}
-button,input,select{font:inherit; color:inherit}
+button,input,select,textarea{font:inherit; color:inherit}
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
@@ -51,9 +53,14 @@ button,input,select{font:inherit; color:inherit}
 .search svg{position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--ink-3)}
 .btn{display:inline-flex; align-items:center; gap:7px; padding:9px 13px; border-radius:var(--r); border:1px solid var(--line-2); background:var(--surface); color:var(--ink); cursor:pointer; font-weight:600; font-size:14px; white-space:nowrap; text-decoration:none}
 .btn:hover{background:var(--panel)}
+.btn-accent{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+.btn-accent:hover{background:var(--accent); filter:brightness(1.08)}
+.btn-danger{color:var(--bad)}
+.btn:disabled{opacity:.45; cursor:not-allowed}
 .seg{display:inline-flex; border:1px solid var(--line-2); border-radius:var(--r); overflow:hidden}
 .seg button{border:0; background:var(--surface); padding:9px 14px; cursor:pointer; font-weight:600; font-size:14px; color:var(--ink-2)}
 .seg button[aria-pressed="true"]{background:var(--accent); color:var(--on-accent)}
+.badge-admin{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; background:var(--ok-soft); color:var(--ok); padding:4px 8px; border-radius:999px}
 
 .filters{max-width:1400px; margin:0 auto; padding:14px 20px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
 .chips{display:flex; gap:6px; flex-wrap:wrap; flex:1 1 auto; min-width:0}
@@ -95,12 +102,30 @@ tbody tr:hover{background:var(--accent-soft)}
 .kv dd{margin:0; overflow-wrap:anywhere}
 .kv a{color:var(--accent)}
 .drawer-foot{margin-top:auto; padding:14px 20px; border-top:1px solid var(--line); display:flex; gap:8px; flex-wrap:wrap}
-@media (max-width:520px){ .kv{grid-template-columns:1fr} }
+
+.modal{position:fixed; z-index:70; inset:0; display:grid; place-items:center; padding:20px; background:rgba(20,14,26,.55)}
+.sheet{background:var(--surface); border-radius:16px; border:1px solid var(--line); box-shadow:var(--shadow-lg); width:min(420px,100%); padding:26px 24px; display:flex; flex-direction:column; gap:14px; max-height:88vh; overflow-y:auto}
+.sheet.wide{width:min(760px,100%)}
+.sheet h3{font-family:var(--cond); font-size:24px; margin:0; font-weight:700}
+.sheet .lead{margin:0; color:var(--ink-3); font-size:13.5px}
+.field{display:flex; flex-direction:column; gap:5px}
+.field label{font-size:12px; font-weight:700; color:var(--ink-3); letter-spacing:.04em}
+.field .hint{font-size:11.5px; color:var(--ink-3); font-weight:500; letter-spacing:0}
+.field input, .field textarea{padding:9px 11px; border-radius:9px; border:1px solid var(--line-2); background:var(--bg); color:var(--ink); width:100%}
+.field textarea{min-height:64px; resize:vertical}
+.msg{font-size:13px; font-weight:600; min-height:18px}
+.msg.bad{color:var(--bad)}
+.msg.ok{color:var(--ok)}
+.form-grid{display:grid; gap:12px; grid-template-columns:1fr 1fr}
+.form-grid .wide{grid-column:1/-1}
+.row-end{display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap}
+@media (max-width:520px){ .form-grid{grid-template-columns:1fr} .kv{grid-template-columns:1fr} }
 
 .state{text-align:center; padding:70px 20px; color:var(--ink-3); display:flex; flex-direction:column; gap:10px; align-items:center}
 .state strong{font-family:var(--cond); font-size:22px; color:var(--ink); font-weight:700}
+.toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--bg); padding:11px 18px; border-radius:999px; font-weight:600; font-size:14px; z-index:90; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; max-width:90vw; text-align:center}
+.toast.on{opacity:1; transform:translateX(-50%)}
 footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3); font-size:12.5px}
-footer a{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -123,7 +148,9 @@ footer a{color:var(--accent)}
         <button id="viewCards" type="button" aria-pressed="true">Tarjetas</button>
         <button id="viewTable" type="button" aria-pressed="false">Tabla</button>
       </div>
-      <button class="btn" id="csvBtn" type="button">Descargar CSV</button>
+      <button class="btn" id="csvBtn" type="button">CSV</button>
+      <button class="btn" id="adminBtn" type="button">Acceso admin</button>
+      <button class="btn btn-accent" id="newBtn" type="button" hidden>+ Nuevo club</button>
     </div>
   </div>
 </header>
@@ -140,7 +167,7 @@ footer a{color:var(--accent)}
 </main>
 
 <footer>
-  <p id="footNote">Clubes Planet Fitness operados por Fitness Para Todos en México. Horarios y costos de estacionamiento sujetos a cambio sin previo aviso; confirma por teléfono antes de tu visita.</p>
+  <p>Clubes Planet Fitness operados por Fitness Para Todos en México. Horarios y costos de estacionamiento sujetos a cambio sin previo aviso; confirma por teléfono antes de tu visita.</p>
 </footer>
 
 <div class="scrim" id="scrim"></div>
@@ -156,14 +183,61 @@ footer a{color:var(--accent)}
   <div class="drawer-foot" id="dFoot"></div>
 </aside>
 
+<div class="modal" id="loginModal" hidden>
+  <form class="sheet" id="loginForm">
+    <h3>Acceso de administrador</h3>
+    <p class="lead">Para editar clubes o dar de alta uno nuevo.</p>
+    <div class="field"><label for="u">Usuario</label><input id="u" autocomplete="username"></div>
+    <div class="field"><label for="p">Contraseña</label><input id="p" type="password" autocomplete="current-password"></div>
+    <div class="field">
+      <label for="tk">Token de GitHub</label>
+      <input id="tk" type="password" autocomplete="off" placeholder="github_pat_…">
+      <span class="hint">Necesario para guardar los cambios en el repositorio. Se queda solo en este navegador. Si lo dejas vacío puedes editar y descargar el archivo, pero no publicar.</span>
+    </div>
+    <div class="msg bad" id="loginErr"></div>
+    <div class="row-end">
+      <button class="btn" type="button" id="loginCancel">Cancelar</button>
+      <button class="btn btn-accent" type="submit">Entrar</button>
+    </div>
+  </form>
+</div>
+
+<div class="modal" id="editModal" hidden>
+  <form class="sheet wide" id="editForm">
+    <h3 id="editTitle">Editar club</h3>
+    <div class="form-grid" id="editFields"></div>
+    <div class="msg" id="editMsg"></div>
+    <div class="row-end">
+      <button class="btn btn-danger" type="button" id="delBtn">Eliminar</button>
+      <button class="btn" type="button" id="editCancel">Cancelar</button>
+      <button class="btn btn-accent" type="submit" id="saveBtn">Guardar y publicar</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
 <script>
 (function(){
   "use strict";
-  var clubs = [], filter = {q:"", city:""}, view = "cards";
+  var REPO = "betancourtjair/directorio-clubes-fpt", DATA_FILE = "clubes.json", BRANCH = "main";
+  var ADMIN_USER = "Admin", ADMIN_PASS = "PlanetFitness$01";
+
+  var clubs = [], filter = {q:"", city:""}, view = "cards", current = null, isAdmin = false, token = "";
+
   var $ = function(id){ return document.getElementById(id); };
   var esc = function(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
     return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); };
   var tel = function(s){ return String(s||"").replace(/[^\d+]/g,""); };
+  function store(k, v){ try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k,v); } catch(e){} }
+  function read(k){ try { return localStorage.getItem(k) || ""; } catch(e){ return ""; } }
+  function toast(msg){
+    var t = $("toast"); t.textContent = msg; t.classList.add("on");
+    clearTimeout(t._t); t._t = setTimeout(function(){ t.classList.remove("on"); }, 3400);
+  }
+  try { isAdmin = sessionStorage.getItem("fpt_admin") === "1"; } catch(e){}
+  token = read("fpt_gh_token");
+
   var ICON = {
     phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
     mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
@@ -172,7 +246,12 @@ footer a{color:var(--accent)}
   var COLS = [["club","Club"],["ciudad","Ciudad"],["direccion","Dirección"],["horario","Horario"],
               ["estacionamiento","Estacionamiento"],["telClub","Teléfono"],["correo","Correo"],
               ["m2","m²"],["apertura","Apertura"]];
+  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],["direccion","Dirección",1],
+                ["horario","Horario de operación",1],["estacionamiento","Costo de estacionamiento",1],
+                ["telClub","Teléfono del club",0],["correo","Correo del club",0],
+                ["m2","Superficie (m²)",0],["apertura","Apertura",0],["maps","Liga de Google Maps",1]];
 
+  /* ---------- filtrado y render ---------- */
   function matches(c){
     if (filter.city && c.ciudad !== filter.city) return false;
     if (!filter.q) return true;
@@ -198,9 +277,9 @@ footer a{color:var(--accent)}
     if (c.maps) acts += '<a class="qbtn" href="'+esc(c.maps)+'" target="_blank" rel="noopener" data-stop>'+ICON.pin+'Mapa</a>';
     return '<div class="card" role="button" tabindex="0" data-id="'+esc(c.id)+'">'
       + '<div class="card-head"><div style="min-width:0"><h3>'+esc(c.club)+'</h3><div class="city">'+esc(c.ciudad||"")+'</div></div></div>'
-      + (c.direccion ? '<p class="addr">'+esc(c.direccion)+'</p>' : '')
+      + (c.direccion ? '<p class="addr">'+esc(c.direccion)+'</p>' : '<p class="addr" style="color:var(--ink-3)">Dirección pendiente</p>')
       + '<div class="quick">'+acts+'</div>'
-      + (c.horario ? '<div class="hrs">'+esc(c.horario)+'</div>' : '<div class="hrs">Horario por confirmar</div>')
+      + '<div class="hrs">'+esc(c.horario || "Horario por confirmar")+'</div>'
       + '</div>';
   }
   function renderTable(list){
@@ -221,7 +300,11 @@ footer a{color:var(--accent)}
       $("grid").hidden = true; $("tableWrap").hidden = false; renderTable(list);
     }
     renderChips();
+    $("newBtn").hidden = !isAdmin;
+    $("adminBtn").innerHTML = isAdmin ? '<span class="badge-admin">Admin</span> Salir' : "Acceso admin";
   }
+
+  /* ---------- detalle ---------- */
   function row(label, value, href){
     if (!value) return "";
     var v = href ? '<a href="'+esc(href)+'"'+(/^https?:/.test(href)?' target="_blank" rel="noopener"':"")+'>'+esc(value)+"</a>" : esc(value);
@@ -230,6 +313,7 @@ footer a{color:var(--accent)}
   function openDrawer(id){
     var c = clubs.filter(function(x){ return x.id === id; })[0];
     if (!c) return;
+    current = c;
     $("dName").textContent = c.club;
     $("dCity").textContent = c.ciudad || "";
     $("dBody").innerHTML =
@@ -244,14 +328,155 @@ footer a{color:var(--accent)}
     var f = "";
     if (c.telClub) f += '<a class="btn" href="tel:'+esc(tel(c.telClub))+'">Llamar al club</a>';
     if (c.maps) f += '<a class="btn" href="'+esc(c.maps)+'" target="_blank" rel="noopener">Ver en mapa</a>';
+    if (isAdmin) f += '<button class="btn btn-accent" type="button" id="editBtn" style="margin-left:auto">Editar</button>';
     $("dFoot").innerHTML = f;
     $("drawer").classList.add("on"); $("drawer").setAttribute("aria-hidden","false");
     $("scrim").classList.add("on");
   }
   function closeDrawer(){
     $("drawer").classList.remove("on"); $("drawer").setAttribute("aria-hidden","true");
-    $("scrim").classList.remove("on");
+    $("scrim").classList.remove("on"); current = null;
   }
+
+  /* ---------- publicar en GitHub ---------- */
+  function b64(str){
+    var bytes = new TextEncoder().encode(str), bin = "";
+    bytes.forEach(function(b){ bin += String.fromCharCode(b); });
+    return btoa(bin);
+  }
+  function apiUrl(){ return "https://api.github.com/repos/" + REPO + "/contents/" + DATA_FILE; }
+  function headers(){ return {Authorization:"Bearer "+token, Accept:"application/vnd.github+json", "X-GitHub-Api-Version":"2022-11-28"}; }
+
+  async function publish(message){
+    if (!token) throw new Error("sin-token");
+    var meta = await fetch(apiUrl() + "?ref=" + BRANCH, {headers: headers(), cache:"no-store"});
+    if (meta.status === 401) throw new Error("token-invalido");
+    if (meta.status === 403 || meta.status === 404) throw new Error("token-sin-permiso");
+    if (!meta.ok) throw new Error("lectura-" + meta.status);
+    var info = await meta.json();
+    var payload = JSON.stringify(clubs, null, 1) + "\n";
+    var put = await fetch(apiUrl(), {
+      method:"PUT",
+      headers: Object.assign({"Content-Type":"application/json"}, headers()),
+      body: JSON.stringify({message: message, content: b64(payload), sha: info.sha, branch: BRANCH})
+    });
+    if (put.status === 401) throw new Error("token-invalido");
+    if (put.status === 403) throw new Error("token-sin-permiso");
+    if (put.status === 409) throw new Error("conflicto");
+    if (!put.ok) throw new Error("escritura-" + put.status);
+  }
+  var ERRORS = {
+    "sin-token": "No hay token de GitHub. Vuelve a entrar como admin y captúralo para poder publicar.",
+    "token-invalido": "El token de GitHub no es válido o ya expiró.",
+    "token-sin-permiso": "El token no tiene permiso de escritura sobre este repositorio (necesita Contents: read and write).",
+    "conflicto": "Alguien más actualizó el archivo. Recarga la página y repite el cambio."
+  };
+  function errText(e){
+    var k = e && e.message ? e.message : "";
+    return ERRORS[k] || "No se pudo publicar el cambio (" + (k || "error") + ").";
+  }
+
+  function downloadJson(){
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(clubs, null, 1) + "\n"], {type:"application/json"}));
+    a.download = "clubes.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  /* ---------- formulario ---------- */
+  function openEdit(c){
+    var isNew = !c;
+    $("editTitle").textContent = isNew ? "Nuevo club" : "Editar " + c.club;
+    $("delBtn").hidden = isNew;
+    $("editMsg").textContent = ""; $("editMsg").className = "msg";
+    $("editFields").innerHTML = FIELDS.map(function(f){
+      var key = f[0], val = c ? (c[key] || "") : "";
+      var ctrl = (key === "direccion" || key === "horario")
+        ? '<textarea id="f_'+key+'">'+esc(val)+"</textarea>"
+        : '<input id="f_'+key+'" value="'+esc(val)+'">';
+      return '<div class="field'+(f[2] ? " wide" : "")+'"><label for="f_'+key+'">'+esc(f[1])+"</label>"+ctrl+"</div>";
+    }).join("");
+    $("editForm").dataset.id = c ? c.id : "";
+    $("saveBtn").textContent = token ? "Guardar y publicar" : "Guardar (sin publicar)";
+    $("editModal").hidden = false;
+    setTimeout(function(){ var el = $("f_club"); if (el) el.focus(); }, 30);
+  }
+  function nextId(){
+    var n = 0;
+    clubs.forEach(function(c){ var m = /^c(\d+)$/.exec(c.id || ""); if (m) n = Math.max(n, +m[1]); });
+    return "c" + String(n + 1).padStart(2, "0");
+  }
+
+  async function saveClub(e){
+    e.preventDefault();
+    var msgEl = $("editMsg");
+    var id = $("editForm").dataset.id;
+    var body = {};
+    FIELDS.forEach(function(f){ var el = $("f_" + f[0]); body[f[0]] = el ? el.value.trim() : ""; });
+    if (!body.club){ msgEl.className = "msg bad"; msgEl.textContent = "El nombre del club es obligatorio."; return; }
+
+    var snapshot = clubs.slice();
+    var existing = clubs.filter(function(x){ return x.id === id; })[0];
+    if (existing){
+      Object.keys(body).forEach(function(k){ existing[k] = body[k]; });
+    } else {
+      body.id = nextId();
+      clubs.push(body);
+    }
+    render();
+
+    if (!token){
+      $("editModal").hidden = true;
+      toast("Guardado solo en esta sesión. Descarga clubes.json y súbelo al repositorio para publicarlo.");
+      downloadJson();
+      return;
+    }
+    $("saveBtn").disabled = true; $("delBtn").disabled = true;
+    msgEl.className = "msg"; msgEl.textContent = "Publicando en GitHub…";
+    try {
+      await publish((existing ? "Actualiza " : "Agrega ") + body.club);
+      $("editModal").hidden = true;
+      toast("Publicado. El sitio se actualiza en menos de un minuto.");
+      if (current && existing) openDrawer(existing.id);
+    } catch(err){
+      clubs = snapshot; render();
+      msgEl.className = "msg bad"; msgEl.textContent = errText(err);
+    } finally { $("saveBtn").disabled = false; $("delBtn").disabled = false; }
+  }
+
+  var delArmed = false;
+  async function delClub(){
+    if (!delArmed){
+      delArmed = true; $("delBtn").textContent = "Confirmar eliminación";
+      setTimeout(function(){ delArmed = false; $("delBtn").textContent = "Eliminar"; }, 5000);
+      return;
+    }
+    delArmed = false; $("delBtn").textContent = "Eliminar";
+    var id = $("editForm").dataset.id;
+    var snapshot = clubs.slice();
+    var gone = clubs.filter(function(c){ return c.id === id; })[0];
+    clubs = clubs.filter(function(c){ return c.id !== id; });
+    render();
+    var msgEl = $("editMsg");
+    if (!token){
+      $("editModal").hidden = true; closeDrawer();
+      toast("Eliminado solo en esta sesión. Descarga clubes.json y súbelo al repositorio.");
+      downloadJson();
+      return;
+    }
+    $("saveBtn").disabled = true; $("delBtn").disabled = true;
+    msgEl.className = "msg"; msgEl.textContent = "Publicando en GitHub…";
+    try {
+      await publish("Elimina " + (gone ? gone.club : id));
+      $("editModal").hidden = true; closeDrawer();
+      toast("Club eliminado y publicado.");
+    } catch(err){
+      clubs = snapshot; render();
+      msgEl.className = "msg bad"; msgEl.textContent = errText(err);
+    } finally { $("saveBtn").disabled = false; $("delBtn").disabled = false; }
+  }
+
   function exportCsv(){
     var list = visible();
     var cell = function(v){ return '"' + String(v==null?"":v).replace(/"/g,'""') + '"'; };
@@ -264,6 +489,7 @@ footer a{color:var(--accent)}
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   }
 
+  /* ---------- eventos ---------- */
   $("q").addEventListener("input", function(e){ filter.q = e.target.value.trim(); render(); });
   $("chips").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if (b){ filter.city = b.dataset.city; render(); } });
   $("viewCards").addEventListener("click", function(){ view="cards"; $("viewCards").setAttribute("aria-pressed","true"); $("viewTable").setAttribute("aria-pressed","false"); render(); });
@@ -280,9 +506,47 @@ footer a{color:var(--accent)}
   $("table").addEventListener("click", function(e){ var tr = e.target.closest("tr[data-id]"); if (tr) openDrawer(tr.dataset.id); });
   $("dClose").addEventListener("click", closeDrawer);
   $("scrim").addEventListener("click", closeDrawer);
-  document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeDrawer(); });
+  $("dFoot").addEventListener("click", function(e){ if (e.target.id === "editBtn") openEdit(current); });
+  document.addEventListener("keydown", function(e){
+    if (e.key !== "Escape") return;
+    if (!$("editModal").hidden) $("editModal").hidden = true;
+    else if (!$("loginModal").hidden) $("loginModal").hidden = true;
+    else closeDrawer();
+  });
 
-  fetch("clubes.json")
+  $("adminBtn").addEventListener("click", function(){
+    if (isAdmin){
+      isAdmin = false; token = "";
+      try { sessionStorage.removeItem("fpt_admin"); } catch(e){}
+      store("fpt_gh_token", null);
+      closeDrawer(); render(); toast("Sesión de administrador cerrada.");
+    } else {
+      $("loginErr").textContent = ""; $("u").value = ""; $("p").value = ""; $("tk").value = token;
+      $("loginModal").hidden = false; setTimeout(function(){ $("u").focus(); }, 30);
+    }
+  });
+  $("loginCancel").addEventListener("click", function(){ $("loginModal").hidden = true; });
+  $("loginForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    if ($("u").value.trim() !== ADMIN_USER || $("p").value !== ADMIN_PASS){
+      $("loginErr").textContent = "Usuario o contraseña incorrectos."; return;
+    }
+    isAdmin = true;
+    token = $("tk").value.trim();
+    try { sessionStorage.setItem("fpt_admin","1"); } catch(err){}
+    store("fpt_gh_token", token || null);
+    $("loginModal").hidden = true;
+    render();
+    toast(token ? "Modo administrador activo. Los cambios se publican en el repositorio."
+                : "Modo administrador sin token: puedes editar y descargar el archivo, pero no publicar.");
+  });
+  $("newBtn").addEventListener("click", function(){ openEdit(null); });
+  $("editCancel").addEventListener("click", function(){ $("editModal").hidden = true; });
+  $("editForm").addEventListener("submit", saveClub);
+  $("delBtn").addEventListener("click", delClub);
+
+  /* ---------- datos ---------- */
+  fetch("clubes.json?v=" + Date.now())
     .then(function(r){ return r.json(); })
     .then(function(d){ clubs = d; render(); })
     .catch(function(){
