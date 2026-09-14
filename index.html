@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Directorio de Clubes · Fitness Para Todos</title>
+<meta name="description" content="Directorio de los clubes Planet Fitness operados por Fitness Para Todos en México: dirección, horarios, teléfono y estacionamiento de cada club.">
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --ink:#1A1420; --ink-2:#5C5166; --ink-3:#8B7F94;
+  --bg:#FAF8FB; --surface:#FFFFFF; --panel:#F3EEF5;
+  --line:#E7DFEB; --line-2:#D3C6DA;
+  --accent:#7B2482; --accent-soft:#F5EAF7; --on-accent:#FFFFFF;
+  --shadow:0 1px 2px rgba(26,20,32,.06), 0 8px 24px -16px rgba(26,20,32,.28);
+  --shadow-lg:0 24px 60px -24px rgba(26,20,32,.45);
+  --r:10px;
+  --sans:'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --cond:'Barlow Condensed', 'Barlow', system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ink:#F3EDF5; --ink-2:#BCAEC4; --ink-3:#8C7F95;
+    --bg:#131019; --surface:#1C1623; --panel:#241C2E;
+    --line:#332941; --line-2:#463857;
+    --accent:#C468CD; --accent-soft:#2C1C34; --on-accent:#1B1022;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -16px rgba(0,0,0,.8);
+    --shadow-lg:0 24px 60px -24px rgba(0,0,0,.9);
+  }
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased}
+img{max-width:100%}
+button,input,select{font:inherit; color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+.top{position:sticky; top:0; z-index:40; background:var(--surface); border-bottom:1px solid var(--line)}
+.top-in{max-width:1400px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap}
+.brand{display:flex; align-items:center; gap:12px; min-width:0}
+.brand img{width:40px; height:40px; object-fit:contain; flex:none}
+.eyebrow{font-family:var(--cond); font-weight:600; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); line-height:1}
+.brand h1{font-family:var(--cond); font-weight:700; font-size:25px; margin:2px 0 0; line-height:1}
+.top-actions{display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap}
+.search{position:relative; flex:1 1 240px; min-width:190px}
+.search input{width:100%; padding:9px 12px 9px 34px; border-radius:var(--r); border:1px solid var(--line-2); background:var(--surface); color:var(--ink)}
+.search svg{position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--ink-3)}
+.btn{display:inline-flex; align-items:center; gap:7px; padding:9px 13px; border-radius:var(--r); border:1px solid var(--line-2); background:var(--surface); color:var(--ink); cursor:pointer; font-weight:600; font-size:14px; white-space:nowrap; text-decoration:none}
+.btn:hover{background:var(--panel)}
+.seg{display:inline-flex; border:1px solid var(--line-2); border-radius:var(--r); overflow:hidden}
+.seg button{border:0; background:var(--surface); padding:9px 14px; cursor:pointer; font-weight:600; font-size:14px; color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--accent); color:var(--on-accent)}
+
+.filters{max-width:1400px; margin:0 auto; padding:14px 20px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.chips{display:flex; gap:6px; flex-wrap:wrap; flex:1 1 auto; min-width:0}
+.chip{border:1px solid var(--line-2); background:var(--surface); color:var(--ink-2); padding:5px 11px; border-radius:999px; cursor:pointer; font-size:13px; font-weight:600}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent); border-color:var(--accent); color:var(--on-accent)}
+.count{color:var(--ink-3); font-size:13px; font-weight:600; font-variant-numeric:tabular-nums}
+
+main{max-width:1400px; margin:0 auto; padding-block:16px 56px; padding-inline:20px}
+.grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fill, minmax(290px,1fr))}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:11px; cursor:pointer; text-align:left; box-shadow:var(--shadow); transition:border-color .12s, transform .12s}
+.card:hover{border-color:var(--accent); transform:translateY(-1px)}
+.card-head{display:flex; gap:10px; align-items:flex-start; justify-content:space-between}
+.card h3{font-family:var(--cond); font-weight:700; font-size:21px; margin:0; line-height:1.1; text-wrap:balance}
+.city{font-family:var(--cond); font-weight:600; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-top:3px}
+.addr{color:var(--ink-2); font-size:13.5px; margin:0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.hrs{font-size:12.5px; color:var(--ink-3); border-top:1px dashed var(--line); padding-top:10px; margin-top:auto; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.quick{display:flex; gap:6px; flex-wrap:wrap}
+.qbtn{display:inline-flex; align-items:center; gap:5px; text-decoration:none; border:1px solid var(--line-2); border-radius:8px; padding:5px 9px; font-size:12.5px; font-weight:600; color:var(--ink-2); background:var(--surface)}
+.qbtn:hover{border-color:var(--accent); color:var(--accent)}
+.qbtn svg{width:14px;height:14px}
+
+.tablewrap{overflow-x:auto; border:1px solid var(--line); border-radius:12px; background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:13px; white-space:nowrap}
+th,td{padding:9px 12px; text-align:left; border-bottom:1px solid var(--line)}
+th{position:sticky; top:0; background:var(--panel); font-family:var(--cond); font-weight:700; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-2)}
+tbody tr:hover{background:var(--accent-soft)}
+
+.scrim{position:fixed; inset:0; background:rgba(20,14,26,.5); z-index:50; opacity:0; pointer-events:none; transition:opacity .16s}
+.scrim.on{opacity:1; pointer-events:auto}
+.drawer{position:fixed; top:0; right:0; bottom:0; width:min(520px,100%); z-index:60; background:var(--surface); border-left:1px solid var(--line); box-shadow:var(--shadow-lg); transform:translateX(102%); transition:transform .2s ease; display:flex; flex-direction:column}
+.drawer.on{transform:none}
+.drawer-head{padding:18px 20px 14px; border-bottom:1px solid var(--line); display:flex; gap:12px; align-items:flex-start}
+.drawer-head h2{font-family:var(--cond); font-weight:700; font-size:27px; margin:0; line-height:1.05}
+.drawer-body{padding:18px 20px 32px; overflow-y:auto; display:flex; flex-direction:column; gap:20px}
+.sect h4{font-family:var(--cond); font-size:12px; letter-spacing:.18em; text-transform:uppercase; color:var(--accent); margin:0 0 9px; font-weight:700}
+.kv{display:grid; grid-template-columns:132px 1fr; gap:6px 12px; font-size:14px; margin:0}
+.kv dt{color:var(--ink-3); font-size:12.5px; font-weight:600}
+.kv dd{margin:0; overflow-wrap:anywhere}
+.kv a{color:var(--accent)}
+.drawer-foot{margin-top:auto; padding:14px 20px; border-top:1px solid var(--line); display:flex; gap:8px; flex-wrap:wrap}
+@media (max-width:520px){ .kv{grid-template-columns:1fr} }
+
+.state{text-align:center; padding:70px 20px; color:var(--ink-3); display:flex; flex-direction:column; gap:10px; align-items:center}
+.state strong{font-family:var(--cond); font-size:22px; color:var(--ink); font-weight:700}
+footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3); font-size:12.5px}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <img src="logo.png" alt="Fitness Para Todos">
+      <div>
+        <div class="eyebrow">Fitness Para Todos</div>
+        <h1>Directorio de Clubes</h1>
+      </div>
+    </div>
+    <div class="top-actions">
+      <div class="search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="q" type="search" placeholder="Buscar club o ciudad…" autocomplete="off">
+      </div>
+      <div class="seg" role="group" aria-label="Vista">
+        <button id="viewCards" type="button" aria-pressed="true">Tarjetas</button>
+        <button id="viewTable" type="button" aria-pressed="false">Tabla</button>
+      </div>
+      <button class="btn" id="csvBtn" type="button">Descargar CSV</button>
+    </div>
+  </div>
+</header>
+
+<div class="filters">
+  <div class="chips" id="chips"></div>
+  <span class="count" id="count"></span>
+</div>
+
+<main>
+  <div id="stateBox" class="state"><strong>Cargando directorio…</strong></div>
+  <div class="grid" id="grid" hidden></div>
+  <div class="tablewrap" id="tableWrap" hidden><table id="table"></table></div>
+</main>
+
+<footer>
+  <p id="footNote">Clubes Planet Fitness operados por Fitness Para Todos en México. Horarios y costos de estacionamiento sujetos a cambio sin previo aviso; confirma por teléfono antes de tu visita.</p>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Detalle del club">
+  <div class="drawer-head">
+    <div style="min-width:0">
+      <div class="city" id="dCity"></div>
+      <h2 id="dName"></h2>
+    </div>
+    <button class="btn" id="dClose" type="button" aria-label="Cerrar" style="margin-left:auto; border-color:transparent; background:transparent">✕</button>
+  </div>
+  <div class="drawer-body" id="dBody"></div>
+  <div class="drawer-foot" id="dFoot"></div>
+</aside>
+
+<script>
+(function(){
+  "use strict";
+  var clubs = [], filter = {q:"", city:""}, view = "cards";
+  var $ = function(id){ return document.getElementById(id); };
+  var esc = function(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); };
+  var tel = function(s){ return String(s||"").replace(/[^\d+]/g,""); };
+  var ICON = {
+    phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
+    mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
+    pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>'
+  };
+  var COLS = [["club","Club"],["ciudad","Ciudad"],["direccion","Dirección"],["horario","Horario"],
+              ["estacionamiento","Estacionamiento"],["telClub","Teléfono"],["correo","Correo"],
+              ["m2","m²"],["apertura","Apertura"]];
+
+  function matches(c){
+    if (filter.city && c.ciudad !== filter.city) return false;
+    if (!filter.q) return true;
+    var q = filter.q.toLowerCase();
+    return ["club","ciudad","direccion"].some(function(k){ return String(c[k]||"").toLowerCase().indexOf(q) > -1; });
+  }
+  function visible(){ return clubs.filter(matches); }
+
+  function renderChips(){
+    var cities = [], seen = {};
+    clubs.forEach(function(c){ if(c.ciudad && !seen[c.ciudad]){ seen[c.ciudad]=1; cities.push(c.ciudad); } });
+    cities.sort(function(a,b){ return a.localeCompare(b,"es"); });
+    $("chips").innerHTML = '<button class="chip" type="button" data-city="" aria-pressed="'+(filter.city===""?"true":"false")+'">Todas ('+clubs.length+')</button>'
+      + cities.map(function(city){
+          var n = clubs.filter(function(c){ return c.ciudad===city; }).length;
+          return '<button class="chip" type="button" data-city="'+esc(city)+'" aria-pressed="'+(filter.city===city?"true":"false")+'">'+esc(city)+' '+n+'</button>';
+        }).join("");
+  }
+  function card(c){
+    var acts = "";
+    if (c.telClub) acts += '<a class="qbtn" href="tel:'+esc(tel(c.telClub))+'" data-stop>'+ICON.phone+'Llamar</a>';
+    if (c.correo) acts += '<a class="qbtn" href="mailto:'+esc(c.correo)+'" data-stop>'+ICON.mail+'Correo</a>';
+    if (c.maps) acts += '<a class="qbtn" href="'+esc(c.maps)+'" target="_blank" rel="noopener" data-stop>'+ICON.pin+'Mapa</a>';
+    return '<div class="card" role="button" tabindex="0" data-id="'+esc(c.id)+'">'
+      + '<div class="card-head"><div style="min-width:0"><h3>'+esc(c.club)+'</h3><div class="city">'+esc(c.ciudad||"")+'</div></div></div>'
+      + (c.direccion ? '<p class="addr">'+esc(c.direccion)+'</p>' : '')
+      + '<div class="quick">'+acts+'</div>'
+      + (c.horario ? '<div class="hrs">'+esc(c.horario)+'</div>' : '<div class="hrs">Horario por confirmar</div>')
+      + '</div>';
+  }
+  function renderTable(list){
+    $("table").innerHTML = "<thead><tr>" + COLS.map(function(c){ return "<th>"+esc(c[1])+"</th>"; }).join("") + "</tr></thead><tbody>"
+      + list.map(function(c){ return '<tr data-id="'+esc(c.id)+'" style="cursor:pointer">'
+          + COLS.map(function(col){ return "<td>"+esc(c[col[0]]||"")+"</td>"; }).join("") + "</tr>"; }).join("")
+      + "</tbody>";
+  }
+  function render(){
+    var list = visible();
+    $("count").textContent = list.length + (list.length === 1 ? " club" : " clubes");
+    $("stateBox").hidden = true;
+    if (view === "cards"){
+      $("grid").hidden = false; $("tableWrap").hidden = true;
+      $("grid").innerHTML = list.length ? list.map(card).join("")
+        : '<div class="state" style="grid-column:1/-1"><strong>Sin resultados</strong><span>Ajusta la búsqueda o el filtro de ciudad.</span></div>';
+    } else {
+      $("grid").hidden = true; $("tableWrap").hidden = false; renderTable(list);
+    }
+    renderChips();
+  }
+  function row(label, value, href){
+    if (!value) return "";
+    var v = href ? '<a href="'+esc(href)+'"'+(/^https?:/.test(href)?' target="_blank" rel="noopener"':"")+'>'+esc(value)+"</a>" : esc(value);
+    return "<dt>"+esc(label)+"</dt><dd>"+v+"</dd>";
+  }
+  function openDrawer(id){
+    var c = clubs.filter(function(x){ return x.id === id; })[0];
+    if (!c) return;
+    $("dName").textContent = c.club;
+    $("dCity").textContent = c.ciudad || "";
+    $("dBody").innerHTML =
+        '<div class="sect"><h4>Ubicación</h4><dl class="kv">'
+      + row("Dirección", c.direccion) + row("Superficie", c.m2 ? c.m2 + " m²" : "")
+      + row("Apertura", c.apertura) + row("Google Maps", c.maps ? "Abrir ubicación" : "", c.maps) + "</dl></div>"
+      + '<div class="sect"><h4>Horario y servicios</h4><dl class="kv">'
+      + row("Horario", c.horario) + row("Estacionamiento", c.estacionamiento) + "</dl></div>"
+      + '<div class="sect"><h4>Contacto</h4><dl class="kv">'
+      + row("Teléfono", c.telClub, c.telClub ? "tel:"+tel(c.telClub) : "")
+      + row("Correo", c.correo, c.correo ? "mailto:"+c.correo : "") + "</dl></div>";
+    var f = "";
+    if (c.telClub) f += '<a class="btn" href="tel:'+esc(tel(c.telClub))+'">Llamar al club</a>';
+    if (c.maps) f += '<a class="btn" href="'+esc(c.maps)+'" target="_blank" rel="noopener">Ver en mapa</a>';
+    $("dFoot").innerHTML = f;
+    $("drawer").classList.add("on"); $("drawer").setAttribute("aria-hidden","false");
+    $("scrim").classList.add("on");
+  }
+  function closeDrawer(){
+    $("drawer").classList.remove("on"); $("drawer").setAttribute("aria-hidden","true");
+    $("scrim").classList.remove("on");
+  }
+  function exportCsv(){
+    var list = visible();
+    var cell = function(v){ return '"' + String(v==null?"":v).replace(/"/g,'""') + '"'; };
+    var csv = "﻿" + COLS.map(function(c){ return cell(c[1]); }).join(",") + "\r\n"
+      + list.map(function(c){ return COLS.map(function(col){ return cell(c[col[0]]); }).join(","); }).join("\r\n");
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv;charset=utf-8"}));
+    a.download = "directorio-clubes-fpt.csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  }
+
+  $("q").addEventListener("input", function(e){ filter.q = e.target.value.trim(); render(); });
+  $("chips").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if (b){ filter.city = b.dataset.city; render(); } });
+  $("viewCards").addEventListener("click", function(){ view="cards"; $("viewCards").setAttribute("aria-pressed","true"); $("viewTable").setAttribute("aria-pressed","false"); render(); });
+  $("viewTable").addEventListener("click", function(){ view="table"; $("viewTable").setAttribute("aria-pressed","true"); $("viewCards").setAttribute("aria-pressed","false"); render(); });
+  $("csvBtn").addEventListener("click", exportCsv);
+  $("grid").addEventListener("click", function(e){
+    if (e.target.closest("[data-stop]")) { e.stopPropagation(); return; }
+    var c = e.target.closest(".card"); if (c) openDrawer(c.dataset.id);
+  });
+  $("grid").addEventListener("keydown", function(e){
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var c = e.target.closest(".card"); if (c && e.target === c){ e.preventDefault(); openDrawer(c.dataset.id); }
+  });
+  $("table").addEventListener("click", function(e){ var tr = e.target.closest("tr[data-id]"); if (tr) openDrawer(tr.dataset.id); });
+  $("dClose").addEventListener("click", closeDrawer);
+  $("scrim").addEventListener("click", closeDrawer);
+  document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeDrawer(); });
+
+  fetch("clubes.json")
+    .then(function(r){ return r.json(); })
+    .then(function(d){ clubs = d; render(); })
+    .catch(function(){
+      $("stateBox").innerHTML = "<strong>No se pudo cargar el directorio</strong><span>Recarga la página para reintentar.</span>";
+    });
+})();
+</script>
+</body>
+</html>
