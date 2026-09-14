@@ -1,33 +1,40 @@
-# Directorio de Clubes — Fitness Para Todos
+# Directorio de Clubes — FPT (Cloudflare Pages)
 
-Sitio estático con el directorio público de los clubes Planet Fitness operados por
-Fitness Para Todos en México: ciudad, dirección, horario, costo de estacionamiento,
-teléfono y correo del club, superficie y fecha de apertura.
+Sitio del directorio de clubes con modo administrador que guarda del lado del servidor:
+la contraseña se valida en una Function y los datos viven en Cloudflare KV. El navegador
+nunca recibe credenciales ni tokens.
 
-## Contenido
+## Estructura
 
-| Archivo | Qué es |
+| Ruta | Qué es |
 |---|---|
-| `index.html` | El sitio completo (búsqueda, filtro por ciudad, fichas, tabla y descarga CSV) |
-| `clubes.json` | La fuente de datos. Editar aquí actualiza el sitio |
+| `index.html` | El sitio (búsqueda, filtros, fichas, tabla, CSV y modo admin) |
+| `clubes.json` | Semilla inicial del directorio; se usa mientras KV esté vacío |
 | `logo.png` | Marca FPT |
+| `_worker.js` | Backend: login con sesión firmada (8 h), lectura y escritura del directorio |
 
-## Actualizar el directorio
+## Configuración en Cloudflare Pages
 
-1. Edita `clubes.json` (un objeto por club).
-2. Haz commit en `main`. GitHub Pages republica el sitio en menos de un minuto.
+**Variables de entorno** (Settings → Environment variables, marcadas como *Secret*):
 
-Campos por club: `id`, `club`, `ciudad`, `direccion`, `m2`, `apertura`, `horario`,
-`estacionamiento`, `telClub`, `correo`, `maps`.
+- `ADMIN_USER` — usuario del administrador
+- `ADMIN_PASS` — contraseña del administrador
+- `SESSION_SECRET` — cadena larga y aleatoria para firmar la sesión
+
+**Binding de KV** (Settings → Functions → KV namespace bindings):
+
+- Variable: `DIRECTORIO` → namespace: `directorio-clubes`
+
+Sin el binding el sitio funciona en modo lectura y avisa al intentar guardar.
+
+## Dominio
+
+Custom domain `directorio.fpt.com.mx`, con un CNAME en Akky apuntando al subdominio
+`.pages.dev` del proyecto.
 
 ## Alcance de los datos
 
-Este repositorio es público y contiene **únicamente información del club como
-establecimiento comercial**. No incluye nombres ni teléfonos personales de gerentes,
-subgerentes, técnicos o administradores de plaza, ni identificadores de sistemas
-internos (Zenoti, Planet Fitness). Esa información vive en el directorio interno
-y no debe agregarse aquí.
-
-## Publicar en GitHub Pages
-
-Settings → Pages → Source: `Deploy from a branch` → rama `main`, carpeta `/ (root)`.
+Solo información del club como establecimiento: dirección, horario, estacionamiento,
+teléfono y correo del club, mapa, superficie y apertura. Sin nombres ni teléfonos
+personales de gerentes, subgerentes, técnicos o administradores de plaza, y sin
+identificadores de sistemas internos.

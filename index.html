@@ -186,14 +186,9 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
 <div class="modal" id="loginModal" hidden>
   <form class="sheet" id="loginForm">
     <h3>Acceso de administrador</h3>
-    <p class="lead">Para editar clubes o dar de alta uno nuevo.</p>
+    <p class="lead">Para editar clubes o dar de alta uno nuevo. La sesión dura 8 horas.</p>
     <div class="field"><label for="u">Usuario</label><input id="u" autocomplete="username"></div>
     <div class="field"><label for="p">Contraseña</label><input id="p" type="password" autocomplete="current-password"></div>
-    <div class="field">
-      <label for="tk">Token de GitHub</label>
-      <input id="tk" type="password" autocomplete="off" placeholder="github_pat_…">
-      <span class="hint">Necesario para guardar los cambios en el repositorio. Se queda solo en este navegador. Si lo dejas vacío puedes editar y descargar el archivo, pero no publicar.</span>
-    </div>
     <div class="msg bad" id="loginErr"></div>
     <div class="row-end">
       <button class="btn" type="button" id="loginCancel">Cancelar</button>
@@ -210,7 +205,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     <div class="row-end">
       <button class="btn btn-danger" type="button" id="delBtn">Eliminar</button>
       <button class="btn" type="button" id="editCancel">Cancelar</button>
-      <button class="btn btn-accent" type="submit" id="saveBtn">Guardar y publicar</button>
+      <button class="btn btn-accent" type="submit" id="saveBtn">Guardar</button>
     </div>
   </form>
 </div>
@@ -220,10 +215,9 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
 <script>
 (function(){
   "use strict";
-  var REPO = "betancourtjair/directorio-clubes-fpt", DATA_FILE = "clubes.json", BRANCH = "main";
-  var ADMIN_USER = "Admin", ADMIN_PASS = "PlanetFitness$01";
+  var ADMIN_SESION_HORAS = 8;
 
-  var clubs = [], filter = {q:"", city:""}, view = "cards", current = null, isAdmin = false, token = "";
+  var clubs = [], filter = {q:"", city:""}, view = "cards", current = null, isAdmin = false;
 
   var $ = function(id){ return document.getElementById(id); };
   var esc = function(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
@@ -235,8 +229,6 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     var t = $("toast"); t.textContent = msg; t.classList.add("on");
     clearTimeout(t._t); t._t = setTimeout(function(){ t.classList.remove("on"); }, 3400);
   }
-  try { isAdmin = sessionStorage.getItem("fpt_admin") === "1"; } catch(e){}
-  token = read("fpt_gh_token");
 
   var ICON = {
     phone:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
@@ -338,50 +330,24 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     $("scrim").classList.remove("on"); current = null;
   }
 
-  /* ---------- publicar en GitHub ---------- */
-  function b64(str){
-    var bytes = new TextEncoder().encode(str), bin = "";
-    bytes.forEach(function(b){ bin += String.fromCharCode(b); });
-    return btoa(bin);
-  }
-  function apiUrl(){ return "https://api.github.com/repos/" + REPO + "/contents/" + DATA_FILE; }
-  function headers(){ return {Authorization:"Bearer "+token, Accept:"application/vnd.github+json", "X-GitHub-Api-Version":"2022-11-28"}; }
-
-  async function publish(message){
-    if (!token) throw new Error("sin-token");
-    var meta = await fetch(apiUrl() + "?ref=" + BRANCH, {headers: headers(), cache:"no-store"});
-    if (meta.status === 401) throw new Error("token-invalido");
-    if (meta.status === 403 || meta.status === 404) throw new Error("token-sin-permiso");
-    if (!meta.ok) throw new Error("lectura-" + meta.status);
-    var info = await meta.json();
-    var payload = JSON.stringify(clubs, null, 1) + "\n";
-    var put = await fetch(apiUrl(), {
+  /* ---------- guardado en el servidor ---------- */
+  async function publish(){
+    var r = await fetch("/api/clubes", {
       method:"PUT",
-      headers: Object.assign({"Content-Type":"application/json"}, headers()),
-      body: JSON.stringify({message: message, content: b64(payload), sha: info.sha, branch: BRANCH})
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify(clubs)
     });
-    if (put.status === 401) throw new Error("token-invalido");
-    if (put.status === 403) throw new Error("token-sin-permiso");
-    if (put.status === 409) throw new Error("conflicto");
-    if (!put.ok) throw new Error("escritura-" + put.status);
+    if (r.status === 401) throw new Error("sesion");
+    if (!r.ok){
+      var d = null; try { d = await r.json(); } catch(e){}
+      throw new Error((d && d.error) || ("error-" + r.status));
+    }
   }
-  var ERRORS = {
-    "sin-token": "No hay token de GitHub. Vuelve a entrar como admin y captúralo para poder publicar.",
-    "token-invalido": "El token de GitHub no es válido o ya expiró.",
-    "token-sin-permiso": "El token no tiene permiso de escritura sobre este repositorio (necesita Contents: read and write).",
-    "conflicto": "Alguien más actualizó el archivo. Recarga la página y repite el cambio."
-  };
   function errText(e){
     var k = e && e.message ? e.message : "";
-    return ERRORS[k] || "No se pudo publicar el cambio (" + (k || "error") + ").";
-  }
-
-  function downloadJson(){
-    var a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(clubs, null, 1) + "\n"], {type:"application/json"}));
-    a.download = "clubes.json";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+    if (k === "sesion") return "Tu sesión de administrador expiró. Vuelve a entrar.";
+    if (k.indexOf("error-") === 0) return "No se pudo guardar (" + k.replace("error-","HTTP ") + ").";
+    return k || "No se pudo guardar el cambio.";
   }
 
   /* ---------- formulario ---------- */
@@ -398,7 +364,6 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
       return '<div class="field'+(f[2] ? " wide" : "")+'"><label for="f_'+key+'">'+esc(f[1])+"</label>"+ctrl+"</div>";
     }).join("");
     $("editForm").dataset.id = c ? c.id : "";
-    $("saveBtn").textContent = token ? "Guardar y publicar" : "Guardar (sin publicar)";
     $("editModal").hidden = false;
     setTimeout(function(){ var el = $("f_club"); if (el) el.focus(); }, 30);
   }
@@ -426,18 +391,12 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     }
     render();
 
-    if (!token){
-      $("editModal").hidden = true;
-      toast("Guardado solo en esta sesión. Descarga clubes.json y súbelo al repositorio para publicarlo.");
-      downloadJson();
-      return;
-    }
     $("saveBtn").disabled = true; $("delBtn").disabled = true;
-    msgEl.className = "msg"; msgEl.textContent = "Publicando en GitHub…";
+    msgEl.className = "msg"; msgEl.textContent = "Guardando…";
     try {
-      await publish((existing ? "Actualiza " : "Agrega ") + body.club);
+      await publish();
       $("editModal").hidden = true;
-      toast("Publicado. El sitio se actualiza en menos de un minuto.");
+      toast(existing ? "Club actualizado." : "Club agregado.");
       if (current && existing) openDrawer(existing.id);
     } catch(err){
       clubs = snapshot; render();
@@ -459,18 +418,12 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     clubs = clubs.filter(function(c){ return c.id !== id; });
     render();
     var msgEl = $("editMsg");
-    if (!token){
-      $("editModal").hidden = true; closeDrawer();
-      toast("Eliminado solo en esta sesión. Descarga clubes.json y súbelo al repositorio.");
-      downloadJson();
-      return;
-    }
     $("saveBtn").disabled = true; $("delBtn").disabled = true;
-    msgEl.className = "msg"; msgEl.textContent = "Publicando en GitHub…";
+    msgEl.className = "msg"; msgEl.textContent = "Guardando…";
     try {
-      await publish("Elimina " + (gone ? gone.club : id));
+      await publish();
       $("editModal").hidden = true; closeDrawer();
-      toast("Club eliminado y publicado.");
+      toast("Club eliminado.");
     } catch(err){
       clubs = snapshot; render();
       msgEl.className = "msg bad"; msgEl.textContent = errText(err);
@@ -514,31 +467,35 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     else closeDrawer();
   });
 
-  $("adminBtn").addEventListener("click", function(){
+  $("adminBtn").addEventListener("click", async function(){
     if (isAdmin){
-      isAdmin = false; token = "";
-      try { sessionStorage.removeItem("fpt_admin"); } catch(e){}
-      store("fpt_gh_token", null);
-      closeDrawer(); render(); toast("Sesión de administrador cerrada.");
+      try { await fetch("/api/login", {method:"DELETE"}); } catch(e){}
+      isAdmin = false; closeDrawer(); render(); toast("Sesión de administrador cerrada.");
     } else {
-      $("loginErr").textContent = ""; $("u").value = ""; $("p").value = ""; $("tk").value = token;
+      $("loginErr").textContent = ""; $("u").value = ""; $("p").value = "";
       $("loginModal").hidden = false; setTimeout(function(){ $("u").focus(); }, 30);
     }
   });
   $("loginCancel").addEventListener("click", function(){ $("loginModal").hidden = true; });
-  $("loginForm").addEventListener("submit", function(e){
+  $("loginForm").addEventListener("submit", async function(e){
     e.preventDefault();
-    if ($("u").value.trim() !== ADMIN_USER || $("p").value !== ADMIN_PASS){
-      $("loginErr").textContent = "Usuario o contraseña incorrectos."; return;
-    }
-    isAdmin = true;
-    token = $("tk").value.trim();
-    try { sessionStorage.setItem("fpt_admin","1"); } catch(err){}
-    store("fpt_gh_token", token || null);
-    $("loginModal").hidden = true;
-    render();
-    toast(token ? "Modo administrador activo. Los cambios se publican en el repositorio."
-                : "Modo administrador sin token: puedes editar y descargar el archivo, pero no publicar.");
+    var btn = $("loginForm").querySelector('button[type=submit]');
+    btn.disabled = true; $("loginErr").textContent = "";
+    try {
+      var r = await fetch("/api/login", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({usuario: $("u").value.trim(), password: $("p").value})
+      });
+      if (!r.ok){
+        var d = null; try { d = await r.json(); } catch(err){}
+        $("loginErr").textContent = (d && d.error) || "No se pudo iniciar sesión.";
+        return;
+      }
+      isAdmin = true; $("loginModal").hidden = true; render();
+      toast("Modo administrador activo por " + ADMIN_SESION_HORAS + " horas.");
+    } catch(err){
+      $("loginErr").textContent = "No se pudo contactar al servidor.";
+    } finally { btn.disabled = false; }
   });
   $("newBtn").addEventListener("click", function(){ openEdit(null); });
   $("editCancel").addEventListener("click", function(){ $("editModal").hidden = true; });
@@ -546,12 +503,21 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   $("delBtn").addEventListener("click", delClub);
 
   /* ---------- datos ---------- */
-  fetch("clubes.json?v=" + Date.now())
-    .then(function(r){ return r.json(); })
-    .then(function(d){ clubs = d; render(); })
-    .catch(function(){
+  (async function start(){
+    try {
+      var r = await fetch("/api/clubes", {cache:"no-store"});
+      clubs = await r.json();
+    } catch(e){
       $("stateBox").innerHTML = "<strong>No se pudo cargar el directorio</strong><span>Recarga la página para reintentar.</span>";
-    });
+      return;
+    }
+    try {
+      var s = await fetch("/api/sesion", {cache:"no-store"});
+      var j = await s.json();
+      isAdmin = !!(j && j.admin);
+    } catch(e){}
+    render();
+  })();
 })();
 </script>
 </body>
