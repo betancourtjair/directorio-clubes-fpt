@@ -77,7 +77,9 @@ main{max-width:1400px; margin:0 auto; padding-block:16px 56px; padding-inline:20
 .card h3{font-family:var(--cond); font-weight:700; font-size:21px; margin:0; line-height:1.1; text-wrap:balance}
 .city{font-family:var(--cond); font-weight:600; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-top:3px}
 .addr{color:var(--ink-2); font-size:13.5px; margin:0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
-.hrs{font-size:12.5px; color:var(--ink-3); border-top:1px dashed var(--line); padding-top:10px; margin-top:auto; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+.person{display:flex; align-items:baseline; gap:8px; font-size:13.5px; border-top:1px dashed var(--line); padding-top:10px; margin-top:auto}
+.person .role{font-family:var(--cond); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); font-weight:600; flex:none}
+.hrs{font-size:12.5px; color:var(--ink-3); padding-top:8px; margin-top:auto; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
 .quick{display:flex; gap:6px; flex-wrap:wrap}
 .qbtn{display:inline-flex; align-items:center; gap:5px; text-decoration:none; border:1px solid var(--line-2); border-radius:8px; padding:5px 9px; font-size:12.5px; font-weight:600; color:var(--ink-2); background:var(--surface)}
 .qbtn:hover{border-color:var(--accent); color:var(--accent)}
@@ -101,6 +103,7 @@ tbody tr:hover{background:var(--accent-soft)}
 .kv dt{color:var(--ink-3); font-size:12.5px; font-weight:600}
 .kv dd{margin:0; overflow-wrap:anywhere}
 .kv a{color:var(--accent)}
+.nota{margin:9px 0 0; font-size:12.5px; color:var(--ink-3); line-height:1.4}
 .drawer-foot{margin-top:auto; padding:14px 20px; border-top:1px solid var(--line); display:flex; gap:8px; flex-wrap:wrap}
 
 .modal{position:fixed; z-index:70; inset:0; display:grid; place-items:center; padding:20px; background:rgba(20,14,26,.55)}
@@ -149,7 +152,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
         <button id="viewTable" type="button" aria-pressed="false">Tabla</button>
       </div>
       <button class="btn" id="csvBtn" type="button">CSV</button>
-      <button class="btn" id="adminBtn" type="button">Acceso admin</button>
+      <button class="btn" id="adminBtn" type="button">Acceso interno</button>
       <button class="btn btn-accent" id="newBtn" type="button" hidden>+ Nuevo club</button>
     </div>
   </div>
@@ -185,9 +188,8 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
 
 <div class="modal" id="loginModal" hidden>
   <form class="sheet" id="loginForm">
-    <h3>Acceso de administrador</h3>
-    <p class="lead">Para editar clubes o dar de alta uno nuevo. La sesión dura 8 horas.</p>
-    <div class="field"><label for="u">Usuario</label><input id="u" autocomplete="username"></div>
+    <h3>Acceso interno</h3>
+    <p class="lead">Muestra los teléfonos del gerente y del subgerente, y habilita la edición de clubes. La sesión dura 8 horas.</p>
     <div class="field"><label for="p">Contraseña</label><input id="p" type="password" autocomplete="current-password"></div>
     <div class="msg bad" id="loginErr"></div>
     <div class="row-end">
@@ -235,10 +237,19 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
     pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>'
   };
-  var COLS = [["club","Club"],["ciudad","Ciudad"],["direccion","Dirección"],["horario","Horario"],
-              ["estacionamiento","Estacionamiento"],["telClub","Teléfono"],["correo","Correo"],
-              ["m2","m²"],["apertura","Apertura"]];
-  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],["direccion","Dirección",1],
+  var COLS_BASE = [["club","Club"],["ciudad","Ciudad"],["gerente","Gerente"],["subgerente","Subgerente"],
+                   ["direccion","Dirección"],["horario","Horario"],["estacionamiento","Estacionamiento"],
+                   ["telClub","Teléfono"],["correo","Correo"],["m2","m²"],["apertura","Apertura"]];
+  var COLS_PRIV = [["telGerente","Tel. gerente"],["telSubgerente","Tel. subgerente"]];
+  function cols(){
+    if (!isAdmin) return COLS_BASE;
+    var out = COLS_BASE.slice(0,4).concat(COLS_PRIV);
+    return out.concat(COLS_BASE.slice(4));
+  }
+  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],
+                ["gerente","Gerente",0],["telGerente","Tel. gerente",0],
+                ["subgerente","Subgerente",0],["telSubgerente","Tel. subgerente",0],
+                ["direccion","Dirección",1],
                 ["horario","Horario de operación",1],["estacionamiento","Costo de estacionamiento",1],
                 ["telClub","Teléfono del club",0],["correo","Correo del club",0],
                 ["m2","Superficie (m²)",0],["apertura","Apertura",0],["maps","Liga de Google Maps",1]];
@@ -271,13 +282,15 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
       + '<div class="card-head"><div style="min-width:0"><h3>'+esc(c.club)+'</h3><div class="city">'+esc(c.ciudad||"")+'</div></div></div>'
       + (c.direccion ? '<p class="addr">'+esc(c.direccion)+'</p>' : '<p class="addr" style="color:var(--ink-3)">Dirección pendiente</p>')
       + '<div class="quick">'+acts+'</div>'
+      + (c.gerente ? '<div class="person"><span class="role">Gerente</span><span>'+esc(c.gerente)+'</span></div>' : '')
       + '<div class="hrs">'+esc(c.horario || "Horario por confirmar")+'</div>'
       + '</div>';
   }
   function renderTable(list){
-    $("table").innerHTML = "<thead><tr>" + COLS.map(function(c){ return "<th>"+esc(c[1])+"</th>"; }).join("") + "</tr></thead><tbody>"
+    var C = cols();
+    $("table").innerHTML = "<thead><tr>" + C.map(function(c){ return "<th>"+esc(c[1])+"</th>"; }).join("") + "</tr></thead><tbody>"
       + list.map(function(c){ return '<tr data-id="'+esc(c.id)+'" style="cursor:pointer">'
-          + COLS.map(function(col){ return "<td>"+esc(c[col[0]]||"")+"</td>"; }).join("") + "</tr>"; }).join("")
+          + C.map(function(col){ return "<td>"+esc(c[col[0]]||"")+"</td>"; }).join("") + "</tr>"; }).join("")
       + "</tbody>";
   }
   function render(){
@@ -293,7 +306,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     }
     renderChips();
     $("newBtn").hidden = !isAdmin;
-    $("adminBtn").innerHTML = isAdmin ? '<span class="badge-admin">Admin</span> Salir' : "Acceso admin";
+    $("adminBtn").innerHTML = isAdmin ? '<span class="badge-admin">Interno</span> Salir' : "Acceso interno";
   }
 
   /* ---------- detalle ---------- */
@@ -302,6 +315,17 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     var v = href ? '<a href="'+esc(href)+'"'+(/^https?:/.test(href)?' target="_blank" rel="noopener"':"")+'>'+esc(value)+"</a>" : esc(value);
     return "<dt>"+esc(label)+"</dt><dd>"+v+"</dd>";
   }
+  function equipo(c){
+    if (!c.gerente && !c.subgerente) return "";
+    var filas = row("Gerente", c.gerente)
+      + (isAdmin ? row("Tel. gerente", c.telGerente, c.telGerente ? "tel:"+tel(c.telGerente) : "") : "")
+      + row("Subgerente", c.subgerente)
+      + (isAdmin ? row("Tel. subgerente", c.telSubgerente, c.telSubgerente ? "tel:"+tel(c.telSubgerente) : "") : "");
+    var nota = isAdmin ? ""
+      : '<p class="nota">Los teléfonos del equipo son de uso interno. Inicia sesión para verlos.</p>';
+    return '<div class="sect"><h4>Equipo del club</h4><dl class="kv">' + filas + "</dl>" + nota + "</div>";
+  }
+
   function openDrawer(id){
     var c = clubs.filter(function(x){ return x.id === id; })[0];
     if (!c) return;
@@ -314,9 +338,10 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
       + row("Apertura", c.apertura) + row("Google Maps", c.maps ? "Abrir ubicación" : "", c.maps) + "</dl></div>"
       + '<div class="sect"><h4>Horario y servicios</h4><dl class="kv">'
       + row("Horario", c.horario) + row("Estacionamiento", c.estacionamiento) + "</dl></div>"
-      + '<div class="sect"><h4>Contacto</h4><dl class="kv">'
+      + '<div class="sect"><h4>Contacto del club</h4><dl class="kv">'
       + row("Teléfono", c.telClub, c.telClub ? "tel:"+tel(c.telClub) : "")
-      + row("Correo", c.correo, c.correo ? "mailto:"+c.correo : "") + "</dl></div>";
+      + row("Correo", c.correo, c.correo ? "mailto:"+c.correo : "") + "</dl></div>"
+      + equipo(c);
     var f = "";
     if (c.telClub) f += '<a class="btn" href="tel:'+esc(tel(c.telClub))+'">Llamar al club</a>';
     if (c.maps) f += '<a class="btn" href="'+esc(c.maps)+'" target="_blank" rel="noopener">Ver en mapa</a>';
@@ -431,10 +456,10 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   }
 
   function exportCsv(){
-    var list = visible();
+    var list = visible(), C = cols();
     var cell = function(v){ return '"' + String(v==null?"":v).replace(/"/g,'""') + '"'; };
-    var csv = "﻿" + COLS.map(function(c){ return cell(c[1]); }).join(",") + "\r\n"
-      + list.map(function(c){ return COLS.map(function(col){ return cell(c[col[0]]); }).join(","); }).join("\r\n");
+    var csv = "﻿" + C.map(function(c){ return cell(c[1]); }).join(",") + "\r\n"
+      + list.map(function(c){ return C.map(function(col){ return cell(c[col[0]]); }).join(","); }).join("\r\n");
     var a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([csv], {type:"text/csv;charset=utf-8"}));
     a.download = "directorio-clubes-fpt.csv";
@@ -470,10 +495,12 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   $("adminBtn").addEventListener("click", async function(){
     if (isAdmin){
       try { await fetch("/api/login", {method:"DELETE"}); } catch(e){}
-      isAdmin = false; closeDrawer(); render(); toast("Sesión de administrador cerrada.");
+      isAdmin = false; closeDrawer();
+      await cargar();
+      render(); toast("Sesión cerrada.");
     } else {
-      $("loginErr").textContent = ""; $("u").value = ""; $("p").value = "";
-      $("loginModal").hidden = false; setTimeout(function(){ $("u").focus(); }, 30);
+      $("loginErr").textContent = ""; $("p").value = "";
+      $("loginModal").hidden = false; setTimeout(function(){ $("p").focus(); }, 30);
     }
   });
   $("loginCancel").addEventListener("click", function(){ $("loginModal").hidden = true; });
@@ -484,15 +511,17 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     try {
       var r = await fetch("/api/login", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({usuario: $("u").value.trim(), password: $("p").value})
+        body: JSON.stringify({password: $("p").value})
       });
       if (!r.ok){
         var d = null; try { d = await r.json(); } catch(err){}
         $("loginErr").textContent = (d && d.error) || "No se pudo iniciar sesión.";
         return;
       }
-      isAdmin = true; $("loginModal").hidden = true; render();
-      toast("Modo administrador activo por " + ADMIN_SESION_HORAS + " horas.");
+      isAdmin = true; $("loginModal").hidden = true;
+      await cargar();
+      render();
+      toast("Sesión interna activa por " + ADMIN_SESION_HORAS + " horas.");
     } catch(err){
       $("loginErr").textContent = "No se pudo contactar al servidor.";
     } finally { btn.disabled = false; }
@@ -503,10 +532,14 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   $("delBtn").addEventListener("click", delClub);
 
   /* ---------- datos ---------- */
+  async function cargar(){
+    var r = await fetch("/api/clubes", {cache:"no-store"});
+    clubs = await r.json();
+  }
+
   (async function start(){
     try {
-      var r = await fetch("/api/clubes", {cache:"no-store"});
-      clubs = await r.json();
+      await cargar();
     } catch(e){
       $("stateBox").innerHTML = "<strong>No se pudo cargar el directorio</strong><span>Recarga la página para reintentar.</span>";
       return;

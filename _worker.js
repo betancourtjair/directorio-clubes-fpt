@@ -83,8 +83,21 @@ function sesionDe(request, env) {
 
 const CAMPOS = {
   id: 12, club: 120, ciudad: 60, direccion: 400, m2: 20, apertura: 20,
-  horario: 400, estacionamiento: 200, telClub: 40, correo: 120, maps: 300
+  horario: 400, estacionamiento: 200, telClub: 40, correo: 120, maps: 300,
+  gerente: 120, telGerente: 40, subgerente: 120, telSubgerente: 40
 };
+
+// Campos que solo se envian al navegador cuando hay sesion iniciada.
+// Un visitante anonimo nunca los recibe, ni siquiera en el codigo fuente.
+const PRIVADOS = ["telGerente", "telSubgerente"];
+
+function sinPrivados(lista) {
+  return lista.map(c => {
+    const o = {};
+    for (const k in c) if (PRIVADOS.indexOf(k) < 0) o[k] = c[k];
+    return o;
+  });
+}
 
 function limpiar(lista) {
   return lista
@@ -97,8 +110,8 @@ function limpiar(lista) {
 }
 
 async function login(request, env) {
-  if (!env.SESSION_SECRET || !env.ADMIN_USER || !env.ADMIN_PASS) {
-    return json({ error: "El servidor no tiene configuradas las credenciales de administrador." }, 500);
+  if (!env.SESSION_SECRET || !env.ADMIN_PASS) {
+    return json({ error: "El servidor no tiene configurada la contraseña de acceso." }, 500);
   }
   let body;
   try {
@@ -106,11 +119,11 @@ async function login(request, env) {
   } catch (e) {
     return json({ error: "Petición inválida." }, 400);
   }
-  if (!igual(body.usuario, env.ADMIN_USER) || !igual(body.password, env.ADMIN_PASS)) {
+  if (!igual(body.password, env.ADMIN_PASS)) {
     await new Promise(r => setTimeout(r, 400));
-    return json({ error: "Usuario o contraseña incorrectos." }, 401);
+    return json({ error: "Contraseña incorrecta." }, 401);
   }
-  const token = await firmar({ u: env.ADMIN_USER, exp: Date.now() + HORAS * 3600 * 1000 }, env.SESSION_SECRET);
+  const token = await firmar({ u: "admin", exp: Date.now() + HORAS * 3600 * 1000 }, env.SESSION_SECRET);
   return json({ ok: true }, 200, {
     "Set-Cookie": SESSION + "=" + token + "; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=" + HORAS * 3600
   });
@@ -124,15 +137,20 @@ function logout() {
 
 async function leerClubes(request, env) {
   const guardado = env.DIRECTORIO ? await env.DIRECTORIO.get(LLAVE) : null;
+  let lista;
   if (guardado) {
-    return new Response(guardado, {
-      headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }
-    });
+    try { lista = JSON.parse(guardado); } catch (e) { lista = []; }
+  } else {
+    const semilla = await env.ASSETS.fetch(new Request(new URL("/clubes.json", request.url)));
+    try { lista = await semilla.json(); } catch (e) { lista = []; }
   }
-  const semilla = await env.ASSETS.fetch(new Request(new URL("/clubes.json", request.url)));
-  const texto = await semilla.text();
-  return new Response(texto, {
-    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }
+  if (!Array.isArray(lista)) lista = [];
+
+  const s = await sesionDe(request, env);
+  const salida = s ? lista : sinPrivados(lista);
+
+  return new Response(JSON.stringify(salida), {
+    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store, private" }
   });
 }
 
@@ -152,6 +170,25 @@ async function escribirClubes(request, env) {
 
   const limpio = limpiar(datos);
   if (!limpio.length) return json({ error: "Ningún registro tiene nombre de club." }, 400);
+
+  // Si el navegador no recibio los telefonos (o los omite), no se pierden:
+  // se conservan los que ya estaban guardados para ese club.
+  const previo = env.DIRECTORIO ? await env.DIRECTORIO.get(LLAVE) : null;
+  if (previo) {
+    let antes = [];
+    try { antes = JSON.parse(previo); } catch (e) { antes = []; }
+    const porId = {};
+    (Array.isArray(antes) ? antes : []).forEach(c => { if (c && c.id) porId[c.id] = c; });
+    limpio.forEach(c => {
+      const viejo = porId[c.id];
+      if (!viejo) return;
+      PRIVADOS.forEach(k => {
+        const enviado = datos.find(d => d && d.id === c.id);
+        const traeCampo = enviado && Object.prototype.hasOwnProperty.call(enviado, k);
+        if (!traeCampo && viejo[k]) c[k] = viejo[k];
+      });
+    });
+  }
 
   await env.DIRECTORIO.put(LLAVE, JSON.stringify(limpio, null, 1));
   return json({ ok: true, total: limpio.length });
