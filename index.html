@@ -60,6 +60,8 @@ button,input,select,textarea{font:inherit; color:inherit}
 .seg{display:inline-flex; border:1px solid var(--line-2); border-radius:var(--r); overflow:hidden}
 .seg button{border:0; background:var(--surface); padding:9px 14px; cursor:pointer; font-weight:600; font-size:14px; color:var(--ink-2)}
 .seg button[aria-pressed="true"]{background:var(--accent); color:var(--on-accent)}
+.seg.modos{width:100%}
+.seg.modos button{flex:1}
 .badge-admin{display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:700; background:var(--ok-soft); color:var(--ok); padding:4px 8px; border-radius:999px}
 
 .filters{max-width:1400px; margin:0 auto; padding:14px 20px 0; display:flex; gap:10px; align-items:center; flex-wrap:wrap}
@@ -189,7 +191,12 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
 <div class="modal" id="loginModal" hidden>
   <form class="sheet" id="loginForm">
     <h3>Acceso interno</h3>
-    <p class="lead">Muestra los teléfonos del gerente y del subgerente, y habilita la edición de clubes. La sesión dura 8 horas.</p>
+    <div class="seg modos" role="group" aria-label="Modo de acceso">
+      <button type="button" id="modoVisor" aria-pressed="true">Ver teléfonos</button>
+      <button type="button" id="modoAdmin" aria-pressed="false">Administrar</button>
+    </div>
+    <p class="lead" id="modoLead">Muestra los teléfonos del gerente y del subgerente de cada club. La sesión dura 8 horas.</p>
+    <div class="field" id="campoUsuario" hidden><label for="u">Usuario</label><input id="u" autocomplete="username"></div>
     <div class="field"><label for="p">Contraseña</label><input id="p" type="password" autocomplete="current-password"></div>
     <div class="msg bad" id="loginErr"></div>
     <div class="row-end">
@@ -219,7 +226,10 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   "use strict";
   var ADMIN_SESION_HORAS = 8;
 
-  var clubs = [], filter = {q:"", city:""}, view = "cards", current = null, isAdmin = false;
+  var clubs = [], filter = {q:"", city:""}, view = "cards", current = null;
+  var rol = null;                                  // null | "visor" | "admin"
+  function puedeEditar(){ return rol === "admin"; }
+  function puedeVerTel(){ return rol !== null; }
 
   var $ = function(id){ return document.getElementById(id); };
   var esc = function(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
@@ -242,7 +252,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
                    ["telClub","Teléfono"],["correo","Correo"],["m2","m²"],["apertura","Apertura"]];
   var COLS_PRIV = [["telGerente","Tel. gerente"],["telSubgerente","Tel. subgerente"]];
   function cols(){
-    if (!isAdmin) return COLS_BASE;
+    if (!puedeVerTel()) return COLS_BASE;
     var out = COLS_BASE.slice(0,4).concat(COLS_PRIV);
     return out.concat(COLS_BASE.slice(4));
   }
@@ -305,8 +315,10 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
       $("grid").hidden = true; $("tableWrap").hidden = false; renderTable(list);
     }
     renderChips();
-    $("newBtn").hidden = !isAdmin;
-    $("adminBtn").innerHTML = isAdmin ? '<span class="badge-admin">Interno</span> Salir' : "Acceso interno";
+    $("newBtn").hidden = !puedeEditar();
+    $("adminBtn").innerHTML = rol
+      ? '<span class="badge-admin">' + (rol === "admin" ? "Admin" : "Visor") + '</span> Salir'
+      : "Acceso interno";
   }
 
   /* ---------- detalle ---------- */
@@ -317,12 +329,13 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   }
   function equipo(c){
     if (!c.gerente && !c.subgerente) return "";
+    var ver = puedeVerTel();
     var filas = row("Gerente", c.gerente)
-      + (isAdmin ? row("Tel. gerente", c.telGerente, c.telGerente ? "tel:"+tel(c.telGerente) : "") : "")
+      + (ver ? row("Tel. gerente", c.telGerente, c.telGerente ? "tel:"+tel(c.telGerente) : "") : "")
       + row("Subgerente", c.subgerente)
-      + (isAdmin ? row("Tel. subgerente", c.telSubgerente, c.telSubgerente ? "tel:"+tel(c.telSubgerente) : "") : "");
-    var nota = isAdmin ? ""
-      : '<p class="nota">Los teléfonos del equipo son de uso interno. Inicia sesión para verlos.</p>';
+      + (ver ? row("Tel. subgerente", c.telSubgerente, c.telSubgerente ? "tel:"+tel(c.telSubgerente) : "") : "");
+    var nota = ver ? ""
+      : '<p class="nota">Los teléfonos del equipo son de uso interno. Entra en modo visor para verlos.</p>';
     return '<div class="sect"><h4>Equipo del club</h4><dl class="kv">' + filas + "</dl>" + nota + "</div>";
   }
 
@@ -345,7 +358,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     var f = "";
     if (c.telClub) f += '<a class="btn" href="tel:'+esc(tel(c.telClub))+'">Llamar al club</a>';
     if (c.maps) f += '<a class="btn" href="'+esc(c.maps)+'" target="_blank" rel="noopener">Ver en mapa</a>';
-    if (isAdmin) f += '<button class="btn btn-accent" type="button" id="editBtn" style="margin-left:auto">Editar</button>';
+    if (puedeEditar()) f += '<button class="btn btn-accent" type="button" id="editBtn" style="margin-left:auto">Editar</button>';
     $("dFoot").innerHTML = f;
     $("drawer").classList.add("on"); $("drawer").setAttribute("aria-hidden","false");
     $("scrim").classList.add("on");
@@ -493,16 +506,30 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   });
 
   $("adminBtn").addEventListener("click", async function(){
-    if (isAdmin){
+    if (rol){
       try { await fetch("/api/login", {method:"DELETE"}); } catch(e){}
-      isAdmin = false; closeDrawer();
+      rol = null; closeDrawer();
       await cargar();
       render(); toast("Sesión cerrada.");
     } else {
-      $("loginErr").textContent = ""; $("p").value = "";
-      $("loginModal").hidden = false; setTimeout(function(){ $("p").focus(); }, 30);
+      $("loginErr").textContent = ""; $("p").value = ""; $("u").value = "";
+      ponModo("visor");
+      $("loginModal").hidden = false;
     }
   });
+  function ponModo(m){
+    var esAdmin = m === "admin";
+    $("modoAdmin").setAttribute("aria-pressed", esAdmin ? "true" : "false");
+    $("modoVisor").setAttribute("aria-pressed", esAdmin ? "false" : "true");
+    $("campoUsuario").hidden = !esAdmin;
+    $("modoLead").textContent = esAdmin
+      ? "Además de los teléfonos, permite editar clubes y dar de alta nuevos. La sesión dura 8 horas."
+      : "Muestra los teléfonos del gerente y del subgerente de cada club. La sesión dura 8 horas.";
+    $("loginErr").textContent = "";
+    setTimeout(function(){ (esAdmin ? $("u") : $("p")).focus(); }, 20);
+  }
+  $("modoVisor").addEventListener("click", function(){ ponModo("visor"); });
+  $("modoAdmin").addEventListener("click", function(){ ponModo("admin"); });
   $("loginCancel").addEventListener("click", function(){ $("loginModal").hidden = true; });
   $("loginForm").addEventListener("submit", async function(e){
     e.preventDefault();
@@ -511,17 +538,24 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     try {
       var r = await fetch("/api/login", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({password: $("p").value})
+        body: JSON.stringify({
+          usuario: $("campoUsuario").hidden ? "" : $("u").value.trim(),
+          password: $("p").value
+        })
       });
       if (!r.ok){
         var d = null; try { d = await r.json(); } catch(err){}
         $("loginErr").textContent = (d && d.error) || "No se pudo iniciar sesión.";
         return;
       }
-      isAdmin = true; $("loginModal").hidden = true;
+      var j = await r.json();
+      rol = (j && j.rol) || "visor";
+      $("loginModal").hidden = true;
       await cargar();
       render();
-      toast("Sesión interna activa por " + ADMIN_SESION_HORAS + " horas.");
+      toast(rol === "admin"
+        ? "Modo administrador activo por " + ADMIN_SESION_HORAS + " horas."
+        : "Modo visor activo por " + ADMIN_SESION_HORAS + " horas.");
     } catch(err){
       $("loginErr").textContent = "No se pudo contactar al servidor.";
     } finally { btn.disabled = false; }
@@ -547,7 +581,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     try {
       var s = await fetch("/api/sesion", {cache:"no-store"});
       var j = await s.json();
-      isAdmin = !!(j && j.admin);
+      rol = (j && j.rol) || null;
     } catch(e){}
     render();
   })();

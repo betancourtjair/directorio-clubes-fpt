@@ -109,9 +109,12 @@ function limpiar(lista) {
     .filter(c => c.club);
 }
 
+// Dos modos:
+//   visor  -> solo contraseña (VISOR_PASS). Ve los teléfonos del equipo.
+//   admin  -> usuario + contraseña (ADMIN_USER / ADMIN_PASS). Además edita y da de alta clubes.
 async function login(request, env) {
   if (!env.SESSION_SECRET || !env.ADMIN_PASS) {
-    return json({ error: "El servidor no tiene configurada la contraseña de acceso." }, 500);
+    return json({ error: "El servidor no tiene configuradas las contraseñas de acceso." }, 500);
   }
   let body;
   try {
@@ -119,12 +122,24 @@ async function login(request, env) {
   } catch (e) {
     return json({ error: "Petición inválida." }, 400);
   }
-  if (!igual(body.password, env.ADMIN_PASS)) {
-    await new Promise(r => setTimeout(r, 400));
-    return json({ error: "Contraseña incorrecta." }, 401);
+
+  const usuario = String(body.usuario == null ? "" : body.usuario).trim();
+  const visorPass = env.VISOR_PASS || env.ADMIN_PASS;
+  let rol = null;
+
+  if (usuario) {
+    if (igual(usuario, env.ADMIN_USER || "Admin") && igual(body.password, env.ADMIN_PASS)) rol = "admin";
+  } else if (igual(body.password, visorPass)) {
+    rol = "visor";
   }
-  const token = await firmar({ u: "admin", exp: Date.now() + HORAS * 3600 * 1000 }, env.SESSION_SECRET);
-  return json({ ok: true }, 200, {
+
+  if (!rol) {
+    await new Promise(r => setTimeout(r, 400));
+    return json({ error: usuario ? "Usuario o contraseña incorrectos." : "Contraseña incorrecta." }, 401);
+  }
+
+  const token = await firmar({ r: rol, exp: Date.now() + HORAS * 3600 * 1000 }, env.SESSION_SECRET);
+  return json({ ok: true, rol: rol }, 200, {
     "Set-Cookie": SESSION + "=" + token + "; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=" + HORAS * 3600
   });
 }
@@ -156,7 +171,8 @@ async function leerClubes(request, env) {
 
 async function escribirClubes(request, env) {
   const s = await sesionDe(request, env);
-  if (!s) return json({ error: "Tu sesión de administrador expiró. Vuelve a entrar." }, 401);
+  if (!s) return json({ error: "Tu sesión expiró. Vuelve a entrar." }, 401);
+  if (s.r !== "admin") return json({ error: "El modo visor no puede editar el directorio." }, 403);
   if (!env.DIRECTORIO) return json({ error: "Falta conectar el almacén de datos (KV) al proyecto." }, 500);
 
   let datos;
@@ -213,7 +229,7 @@ export default {
 
     if (ruta === "/api/sesion") {
       const s = await sesionDe(request, env);
-      return json({ admin: !!s });
+      return json({ rol: s ? s.r : null });
     }
 
     return env.ASSETS.fetch(request);
