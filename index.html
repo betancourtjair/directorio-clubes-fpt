@@ -47,6 +47,12 @@ button,input,select,textarea{font:inherit; color:inherit}
 .brand img{width:40px; height:40px; object-fit:contain; flex:none}
 .eyebrow{font-family:var(--cond); font-weight:600; font-size:11px; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); line-height:1}
 .brand h1{font-family:var(--cond); font-weight:700; font-size:25px; margin:2px 0 0; line-height:1}
+.totales{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+.pill-total{display:inline-flex; align-items:baseline; gap:5px; background:var(--accent); color:var(--on-accent); border-radius:999px; padding:5px 13px; font-size:13px; font-weight:600; white-space:nowrap}
+.pill-total b{font-family:var(--cond); font-size:20px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums}
+.pill-soon{display:inline-flex; align-items:center; gap:5px; border:1px dashed var(--line-2); color:var(--ink-3); border-radius:999px; padding:5px 11px; font-size:12.5px; font-weight:600; white-space:nowrap}
+.pill-soon b{color:var(--ink-2); font-variant-numeric:tabular-nums}
+.tag-soon{display:inline-flex; align-items:center; font-family:var(--cond); font-size:11px; letter-spacing:.14em; text-transform:uppercase; font-weight:700; color:var(--ink-3); border:1px solid var(--line-2); border-radius:6px; padding:3px 7px; flex:none}
 .top-actions{display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap}
 .search{position:relative; flex:1 1 240px; min-width:190px}
 .search input{width:100%; padding:9px 12px 9px 34px; border-radius:var(--r); border:1px solid var(--line-2); background:var(--surface); color:var(--ink)}
@@ -116,7 +122,7 @@ tbody tr:hover{background:var(--accent-soft)}
 .field{display:flex; flex-direction:column; gap:5px}
 .field label{font-size:12px; font-weight:700; color:var(--ink-3); letter-spacing:.04em}
 .field .hint{font-size:11.5px; color:var(--ink-3); font-weight:500; letter-spacing:0}
-.field input, .field textarea{padding:9px 11px; border-radius:9px; border:1px solid var(--line-2); background:var(--bg); color:var(--ink); width:100%}
+.field input, .field textarea, .field select{padding:9px 11px; border-radius:9px; border:1px solid var(--line-2); background:var(--bg); color:var(--ink); width:100%}
 .field textarea{min-height:64px; resize:vertical}
 .msg{font-size:13px; font-weight:600; min-height:18px}
 .msg.bad{color:var(--bad)}
@@ -147,6 +153,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
         <div class="eyebrow">Fitness Para Todos</div>
         <h1>Directorio de Clubes</h1>
       </div>
+      <div class="totales" id="totales" hidden></div>
     </div>
     <div class="top-actions">
       <div class="search">
@@ -253,16 +260,16 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
     pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>'
   };
-  var COLS_BASE = [["club","Club"],["region","Región"],["ciudad","Ciudad"],["gerente","Gerente"],["subgerente","Subgerente"],
+  var COLS_BASE = [["club","Club"],["region","Región"],["estado","Estado"],["ciudad","Ciudad"],["gerente","Gerente"],["subgerente","Subgerente"],
                    ["direccion","Dirección"],["horario","Horario"],["estacionamiento","Estacionamiento"],
                    ["telClub","Teléfono"],["correo","Correo"],["m2","m²"],["apertura","Apertura"]];
   var COLS_PRIV = [["telGerente","Tel. gerente"],["telSubgerente","Tel. subgerente"]];
   function cols(){
     if (!puedeVerTel()) return COLS_BASE;
-    var out = COLS_BASE.slice(0,5).concat(COLS_PRIV);
-    return out.concat(COLS_BASE.slice(5));
+    var out = COLS_BASE.slice(0,6).concat(COLS_PRIV);
+    return out.concat(COLS_BASE.slice(6));
   }
-  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],["region","Región (R1 a R5)",0],
+  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],["region","Región (R1 a R5)",0],["estado","Estado",0],
                 ["gerente","Gerente",0],["telGerente","Tel. gerente",0],
                 ["subgerente","Subgerente",0],["telSubgerente","Tel. subgerente",0],
                 ["direccion","Dirección",1],
@@ -273,6 +280,17 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   /* ---------- filtrado y render ---------- */
   var REGIONES = ["R1","R2","R3","R4","R5"];
   function etiqueta(r){ return r ? "Región " + r.replace("R","") : "Sin región"; }
+  function porAbrir(c){ return (c.estado || "") === "por_abrir"; }
+
+  function pintaTotales(){
+    var abiertos = clubs.filter(function(c){ return !porAbrir(c); }).length;
+    var pendientes = clubs.length - abiertos;
+    if (!clubs.length){ $("totales").hidden = true; return; }
+    $("totales").hidden = false;
+    $("totales").innerHTML = '<span class="pill-total"><b>' + abiertos + '</b> '
+      + (abiertos === 1 ? "club abierto" : "clubes abiertos") + '</span>'
+      + (pendientes ? '<span class="pill-soon"><b>' + pendientes + '</b> por abrir</span>' : "");
+  }
 
   function matches(c){
     if (filter.city && c.ciudad !== filter.city) return false;
@@ -298,7 +316,8 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     if (c.correo) acts += '<a class="qbtn" href="mailto:'+esc(c.correo)+'" data-stop>'+ICON.mail+'Correo</a>';
     if (c.maps) acts += '<a class="qbtn" href="'+esc(c.maps)+'" target="_blank" rel="noopener" data-stop>'+ICON.pin+'Mapa</a>';
     return '<div class="card" role="button" tabindex="0" data-id="'+esc(c.id)+'">'
-      + '<div class="card-head"><div style="min-width:0"><h3>'+esc(c.club)+'</h3><div class="city">'+esc(c.ciudad||"")+'</div></div></div>'
+      + '<div class="card-head"><div style="min-width:0"><h3>'+esc(c.club)+'</h3><div class="city">'+esc(c.ciudad||"")+'</div></div>'
+        + (porAbrir(c) ? '<span class="tag-soon">Por abrir</span>' : '') + '</div>'
       + (c.direccion ? '<p class="addr">'+esc(c.direccion)+'</p>' : '<p class="addr" style="color:var(--ink-3)">Dirección pendiente</p>')
       + '<div class="quick">'+acts+'</div>'
       + (c.gerente ? '<div class="person"><span class="role">Gerente</span><span>'+esc(c.gerente)+'</span></div>' : '')
@@ -310,7 +329,9 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     $("table").innerHTML = "<thead><tr>" + C.map(function(c){ return "<th>"+esc(c[1])+"</th>"; }).join("") + "</tr></thead><tbody>"
       + list.map(function(c){ return '<tr data-id="'+esc(c.id)+'" style="cursor:pointer">'
           + C.map(function(col){
-              var v = col[0] === "region" ? (c.region ? etiqueta(c.region) : "") : (c[col[0]] || "");
+              var v = col[0] === "region" ? (c.region ? etiqueta(c.region) : "")
+                    : col[0] === "estado" ? (porAbrir(c) ? "Por abrir" : "Abierto")
+                    : (c[col[0]] || "");
               return "<td>"+esc(v)+"</td>";
             }).join("") + "</tr>"; }).join("")
       + "</tbody>";
@@ -346,6 +367,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
       renderTable(list);
     }
     renderChips();
+    pintaTotales();
     $("newBtn").hidden = !puedeEditar();
     $("adminBtn").innerHTML = rol
       ? '<span class="badge-admin">' + (rol === "admin" ? "Admin" : "Visor") + '</span> Salir'
@@ -379,7 +401,8 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     $("dBody").innerHTML =
         '<div class="sect"><h4>Ubicación</h4><dl class="kv">'
       + row("Dirección", c.direccion) + row("Superficie", c.m2 ? c.m2 + " m²" : "")
-      + row("Apertura", c.apertura) + row("Región", c.region ? etiqueta(c.region) : "")
+      + row("Apertura", porAbrir(c) ? "Pendiente de apertura" : c.apertura)
+      + row("Región", c.region ? etiqueta(c.region) : "")
       + row("Google Maps", c.maps ? "Abrir ubicación" : "", c.maps) + "</dl></div>"
       + '<div class="sect"><h4>Horario y servicios</h4><dl class="kv">'
       + row("Horario", c.horario) + row("Estacionamiento", c.estacionamiento) + "</dl></div>"
@@ -428,9 +451,17 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     $("editMsg").textContent = ""; $("editMsg").className = "msg";
     $("editFields").innerHTML = FIELDS.map(function(f){
       var key = f[0], val = c ? (c[key] || "") : "";
-      var ctrl = (key === "direccion" || key === "horario")
-        ? '<textarea id="f_'+key+'">'+esc(val)+"</textarea>"
-        : '<input id="f_'+key+'" value="'+esc(val)+'">';
+      var ctrl;
+      if (key === "estado"){
+        ctrl = '<select id="f_estado">'
+          + '<option value=""' + (val ? "" : " selected") + '>Abierto</option>'
+          + '<option value="por_abrir"' + (val ? " selected" : "") + '>Por abrir</option>'
+          + "</select>";
+      } else if (key === "direccion" || key === "horario"){
+        ctrl = '<textarea id="f_'+key+'">'+esc(val)+"</textarea>";
+      } else {
+        ctrl = '<input id="f_'+key+'" value="'+esc(val)+'">';
+      }
       return '<div class="field'+(f[2] ? " wide" : "")+'"><label for="f_'+key+'">'+esc(f[1])+"</label>"+ctrl+"</div>";
     }).join("");
     $("editForm").dataset.id = c ? c.id : "";
