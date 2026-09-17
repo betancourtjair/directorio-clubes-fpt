@@ -126,6 +126,10 @@ tbody tr:hover{background:var(--accent-soft)}
 .row-end{display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap}
 @media (max-width:520px){ .form-grid{grid-template-columns:1fr} .kv{grid-template-columns:1fr} }
 
+.reg{margin-bottom:34px}
+.reg-head{display:flex; align-items:baseline; gap:12px; margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--accent)}
+.reg-head h2{font-family:var(--cond); font-weight:700; font-size:23px; margin:0; letter-spacing:.01em}
+.reg-n{font-size:12.5px; font-weight:600; color:var(--ink-3); font-variant-numeric:tabular-nums}
 .state{text-align:center; padding:70px 20px; color:var(--ink-3); display:flex; flex-direction:column; gap:10px; align-items:center}
 .state strong{font-family:var(--cond); font-size:22px; color:var(--ink); font-weight:700}
 .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--bg); padding:11px 18px; border-radius:999px; font-weight:600; font-size:14px; z-index:90; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; max-width:90vw; text-align:center}
@@ -151,6 +155,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
       </div>
       <div class="seg" role="group" aria-label="Vista">
         <button id="viewCards" type="button" aria-pressed="true">Tarjetas</button>
+        <button id="viewRegion" type="button" aria-pressed="false">Regiones</button>
         <button id="viewTable" type="button" aria-pressed="false">Tabla</button>
       </div>
       <button class="btn" id="csvBtn" type="button">CSV</button>
@@ -168,6 +173,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
 <main>
   <div id="stateBox" class="state"><strong>Cargando directorio…</strong></div>
   <div class="grid" id="grid" hidden></div>
+  <div id="regionWrap" hidden></div>
   <div class="tablewrap" id="tableWrap" hidden><table id="table"></table></div>
 </main>
 
@@ -247,16 +253,16 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
     pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>'
   };
-  var COLS_BASE = [["club","Club"],["ciudad","Ciudad"],["gerente","Gerente"],["subgerente","Subgerente"],
+  var COLS_BASE = [["club","Club"],["region","Región"],["ciudad","Ciudad"],["gerente","Gerente"],["subgerente","Subgerente"],
                    ["direccion","Dirección"],["horario","Horario"],["estacionamiento","Estacionamiento"],
                    ["telClub","Teléfono"],["correo","Correo"],["m2","m²"],["apertura","Apertura"]];
   var COLS_PRIV = [["telGerente","Tel. gerente"],["telSubgerente","Tel. subgerente"]];
   function cols(){
     if (!puedeVerTel()) return COLS_BASE;
-    var out = COLS_BASE.slice(0,4).concat(COLS_PRIV);
-    return out.concat(COLS_BASE.slice(4));
+    var out = COLS_BASE.slice(0,5).concat(COLS_PRIV);
+    return out.concat(COLS_BASE.slice(5));
   }
-  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],
+  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],["region","Región (R1 a R5)",0],
                 ["gerente","Gerente",0],["telGerente","Tel. gerente",0],
                 ["subgerente","Subgerente",0],["telSubgerente","Tel. subgerente",0],
                 ["direccion","Dirección",1],
@@ -265,6 +271,9 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
                 ["m2","Superficie (m²)",0],["apertura","Apertura",0],["maps","Liga de Google Maps",1]];
 
   /* ---------- filtrado y render ---------- */
+  var REGIONES = ["R1","R2","R3","R4","R5"];
+  function etiqueta(r){ return r ? "Región " + r.replace("R","") : "Sin región"; }
+
   function matches(c){
     if (filter.city && c.ciudad !== filter.city) return false;
     if (!filter.q) return true;
@@ -300,19 +309,41 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     var C = cols();
     $("table").innerHTML = "<thead><tr>" + C.map(function(c){ return "<th>"+esc(c[1])+"</th>"; }).join("") + "</tr></thead><tbody>"
       + list.map(function(c){ return '<tr data-id="'+esc(c.id)+'" style="cursor:pointer">'
-          + C.map(function(col){ return "<td>"+esc(c[col[0]]||"")+"</td>"; }).join("") + "</tr>"; }).join("")
+          + C.map(function(col){
+              var v = col[0] === "region" ? (c.region ? etiqueta(c.region) : "") : (c[col[0]] || "");
+              return "<td>"+esc(v)+"</td>";
+            }).join("") + "</tr>"; }).join("")
       + "</tbody>";
   }
+  function renderRegiones(list){
+    var orden = REGIONES.concat([""]);
+    var html = orden.map(function(r){
+      var del = list.filter(function(c){ return (c.region || "") === r; });
+      if (!del.length) return "";
+      return '<section class="reg">'
+        + '<div class="reg-head"><h2>' + esc(etiqueta(r)) + '</h2>'
+        + '<span class="reg-n">' + del.length + (del.length === 1 ? " club" : " clubes") + '</span></div>'
+        + '<div class="grid">' + del.map(card).join("") + '</div>'
+        + '</section>';
+    }).join("");
+    $("regionWrap").innerHTML = html ||
+      '<div class="state"><strong>Sin resultados</strong><span>Ajusta la búsqueda o el filtro de ciudad.</span></div>';
+  }
+
   function render(){
     var list = visible();
     $("count").textContent = list.length + (list.length === 1 ? " club" : " clubes");
     $("stateBox").hidden = true;
+    $("grid").hidden = view !== "cards";
+    $("regionWrap").hidden = view !== "region";
+    $("tableWrap").hidden = view !== "table";
     if (view === "cards"){
-      $("grid").hidden = false; $("tableWrap").hidden = true;
       $("grid").innerHTML = list.length ? list.map(card).join("")
         : '<div class="state" style="grid-column:1/-1"><strong>Sin resultados</strong><span>Ajusta la búsqueda o el filtro de ciudad.</span></div>';
+    } else if (view === "region"){
+      renderRegiones(list);
     } else {
-      $("grid").hidden = true; $("tableWrap").hidden = false; renderTable(list);
+      renderTable(list);
     }
     renderChips();
     $("newBtn").hidden = !puedeEditar();
@@ -348,7 +379,8 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     $("dBody").innerHTML =
         '<div class="sect"><h4>Ubicación</h4><dl class="kv">'
       + row("Dirección", c.direccion) + row("Superficie", c.m2 ? c.m2 + " m²" : "")
-      + row("Apertura", c.apertura) + row("Google Maps", c.maps ? "Abrir ubicación" : "", c.maps) + "</dl></div>"
+      + row("Apertura", c.apertura) + row("Región", c.region ? etiqueta(c.region) : "")
+      + row("Google Maps", c.maps ? "Abrir ubicación" : "", c.maps) + "</dl></div>"
       + '<div class="sect"><h4>Horario y servicios</h4><dl class="kv">'
       + row("Horario", c.horario) + row("Estacionamiento", c.estacionamiento) + "</dl></div>"
       + '<div class="sect"><h4>Contacto del club</h4><dl class="kv">'
@@ -483,13 +515,23 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   /* ---------- eventos ---------- */
   $("q").addEventListener("input", function(e){ filter.q = e.target.value.trim(); render(); });
   $("chips").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if (b){ filter.city = b.dataset.city; render(); } });
-  $("viewCards").addEventListener("click", function(){ view="cards"; $("viewCards").setAttribute("aria-pressed","true"); $("viewTable").setAttribute("aria-pressed","false"); render(); });
-  $("viewTable").addEventListener("click", function(){ view="table"; $("viewTable").setAttribute("aria-pressed","true"); $("viewCards").setAttribute("aria-pressed","false"); render(); });
+  function ponVista(v){
+    view = v;
+    [["cards","viewCards"],["region","viewRegion"],["table","viewTable"]].forEach(function(par){
+      $(par[1]).setAttribute("aria-pressed", v === par[0] ? "true" : "false");
+    });
+    render();
+  }
+  $("viewCards").addEventListener("click", function(){ ponVista("cards"); });
+  $("viewRegion").addEventListener("click", function(){ ponVista("region"); });
+  $("viewTable").addEventListener("click", function(){ ponVista("table"); });
   $("csvBtn").addEventListener("click", exportCsv);
-  $("grid").addEventListener("click", function(e){
+  function clicTarjeta(e){
     if (e.target.closest("[data-stop]")) { e.stopPropagation(); return; }
     var c = e.target.closest(".card"); if (c) openDrawer(c.dataset.id);
-  });
+  }
+  $("grid").addEventListener("click", clicTarjeta);
+  $("regionWrap").addEventListener("click", clicTarjeta);
   $("grid").addEventListener("keydown", function(e){
     if (e.key !== "Enter" && e.key !== " ") return;
     var c = e.target.closest(".card"); if (c && e.target === c){ e.preventDefault(); openDrawer(c.dataset.id); }

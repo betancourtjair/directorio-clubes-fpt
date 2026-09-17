@@ -82,7 +82,7 @@ function sesionDe(request, env) {
 }
 
 const CAMPOS = {
-  id: 12, club: 120, ciudad: 60, direccion: 400, m2: 20, apertura: 20,
+  id: 12, club: 120, ciudad: 60, region: 4, direccion: 400, m2: 20, apertura: 20,
   horario: 400, estacionamiento: 200, telClub: 40, correo: 120, maps: 300,
   gerente: 120, telGerente: 40, subgerente: 120, telSubgerente: 40
 };
