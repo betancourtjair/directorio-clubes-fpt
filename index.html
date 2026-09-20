@@ -192,8 +192,8 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
         <input id="q" type="search" placeholder="Buscar club o ciudad…" autocomplete="off">
       </div>
       <div class="seg" role="group" aria-label="Vista">
-        <button id="viewCards" type="button" aria-pressed="true">Tarjetas</button>
-        <button id="viewMapa" type="button" aria-pressed="false">Mapa</button>
+        <button id="viewMapa" type="button" aria-pressed="true">Mapa</button>
+        <button id="viewCards" type="button" aria-pressed="false">Tarjetas</button>
         <button id="viewRegion" type="button" aria-pressed="false">Regiones</button>
         <button id="viewTable" type="button" aria-pressed="false">Tabla</button>
       </div>
@@ -272,7 +272,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   "use strict";
   var ADMIN_SESION_HORAS = 8;
 
-  var clubs = [], filter = {q:"", city:"", entidad:""}, view = "cards", current = null;
+  var clubs = [], filter = {q:"", city:"", entidad:""}, view = "mapa", current = null;
   var rol = null;                                  // null | "visor" | "admin"
   function puedeEditar(){ return rol === "admin"; }
   function puedeVerTel(){ return rol !== null; }
@@ -811,6 +811,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   }
 
   (async function start(){
+    cargaMapa();          // en paralelo con los datos: es la vista de entrada
     try {
       await cargar();
     } catch(e){
