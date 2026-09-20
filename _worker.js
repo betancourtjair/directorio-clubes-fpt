@@ -82,7 +82,7 @@ function sesionDe(request, env) {
 }
 
 const CAMPOS = {
-  id: 12, club: 120, ciudad: 60, region: 4, estado: 12, direccion: 400, m2: 20, apertura: 20,
+  id: 12, club: 120, ciudad: 60, region: 20, estado: 12, direccion: 400, m2: 20, apertura: 20,
   horario: 400, estacionamiento: 200, telClub: 40, correo: 120, maps: 300,
   gerente: 120, telGerente: 40, subgerente: 120, telSubgerente: 40
 };
@@ -99,11 +99,25 @@ function sinPrivados(lista) {
   });
 }
 
+// La región se guarda siempre como "Región 1" … "Región 5".
+// Cualquier variante que llegue (R1, Region 1, r3, 4) se normaliza aquí,
+// así el dato queda parejo aunque alguien escriba a mano contra la API.
+const REGIONES = ["Región 1", "Región 2", "Región 3", "Región 4", "Región 5"];
+
+function normRegion(v) {
+  const s = String(v == null ? "" : v).trim();
+  const m = /(\d)/.exec(s);
+  if (!m) return "";
+  const n = Number(m[1]);
+  return n >= 1 && n <= 5 ? REGIONES[n - 1] : "";
+}
+
 function limpiar(lista) {
   return lista
     .map(c => {
       const o = {};
       for (const k in CAMPOS) o[k] = String(c && c[k] != null ? c[k] : "").slice(0, CAMPOS[k]);
+      o.region = normRegion(o.region);
       return o;
     })
     .filter(c => c.club);

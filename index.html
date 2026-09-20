@@ -269,7 +269,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     var out = COLS_BASE.slice(0,6).concat(COLS_PRIV);
     return out.concat(COLS_BASE.slice(6));
   }
-  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],["region","Región (R1 a R5)",0],["estado","Estado",0],
+  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],["region","Región",0],["estado","Estado",0],
                 ["gerente","Gerente",0],["telGerente","Tel. gerente",0],
                 ["subgerente","Subgerente",0],["telSubgerente","Tel. subgerente",0],
                 ["direccion","Dirección",1],
@@ -278,8 +278,15 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
                 ["m2","Superficie (m²)",0],["apertura","Apertura",0],["maps","Liga de Google Maps",1]];
 
   /* ---------- filtrado y render ---------- */
-  var REGIONES = ["R1","R2","R3","R4","R5"];
-  function etiqueta(r){ return r ? "Región " + r.replace("R","") : "Sin región"; }
+  var REGIONES = ["Región 1","Región 2","Región 3","Región 4","Región 5"];
+  // Acepta lo que haya guardado (R1, Region 1, 3…) y lo devuelve como "Región N".
+  function normRegion(v){
+    var m = /(\d)/.exec(String(v == null ? "" : v).trim());
+    if (!m) return "";
+    var n = +m[1];
+    return (n >= 1 && n <= 5) ? REGIONES[n - 1] : "";
+  }
+  function etiqueta(r){ return normRegion(r) || "Sin región"; }
   function porAbrir(c){ return (c.estado || "") === "por_abrir"; }
 
   function pintaTotales(){
@@ -329,7 +336,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     $("table").innerHTML = "<thead><tr>" + C.map(function(c){ return "<th>"+esc(c[1])+"</th>"; }).join("") + "</tr></thead><tbody>"
       + list.map(function(c){ return '<tr data-id="'+esc(c.id)+'" style="cursor:pointer">'
           + C.map(function(col){
-              var v = col[0] === "region" ? (c.region ? etiqueta(c.region) : "")
+              var v = col[0] === "region" ? normRegion(c.region)
                     : col[0] === "estado" ? (porAbrir(c) ? "Por abrir" : "Abierto")
                     : (c[col[0]] || "");
               return "<td>"+esc(v)+"</td>";
@@ -339,7 +346,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   function renderRegiones(list){
     var orden = REGIONES.concat([""]);
     var html = orden.map(function(r){
-      var del = list.filter(function(c){ return (c.region || "") === r; });
+      var del = list.filter(function(c){ return normRegion(c.region) === r; });
       if (!del.length) return "";
       return '<section class="reg">'
         + '<div class="reg-head"><h2>' + esc(etiqueta(r)) + '</h2>'
@@ -402,7 +409,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
         '<div class="sect"><h4>Ubicación</h4><dl class="kv">'
       + row("Dirección", c.direccion) + row("Superficie", c.m2 ? c.m2 + " m²" : "")
       + row("Apertura", porAbrir(c) ? "Pendiente de apertura" : c.apertura)
-      + row("Región", c.region ? etiqueta(c.region) : "")
+      + row("Región", normRegion(c.region))
       + row("Google Maps", c.maps ? "Abrir ubicación" : "", c.maps) + "</dl></div>"
       + '<div class="sect"><h4>Horario y servicios</h4><dl class="kv">'
       + row("Horario", c.horario) + row("Estacionamiento", c.estacionamiento) + "</dl></div>"
@@ -452,7 +459,15 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     $("editFields").innerHTML = FIELDS.map(function(f){
       var key = f[0], val = c ? (c[key] || "") : "";
       var ctrl;
-      if (key === "estado"){
+      if (key === "region"){
+        var actual = normRegion(val);
+        ctrl = '<select id="f_region">'
+          + '<option value=""' + (actual ? "" : " selected") + '>Sin asignar</option>'
+          + REGIONES.map(function(r){
+              return '<option value="' + esc(r) + '"' + (actual === r ? " selected" : "") + ">" + esc(r) + "</option>";
+            }).join("")
+          + "</select>";
+      } else if (key === "estado"){
         ctrl = '<select id="f_estado">'
           + '<option value=""' + (val ? "" : " selected") + '>Abierto</option>'
           + '<option value="por_abrir"' + (val ? " selected" : "") + '>Por abrir</option>'
