@@ -693,10 +693,13 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   /* ---------- eventos ---------- */
   $("q").addEventListener("input", function(e){ filter.q = e.target.value.trim(); render(); });
   $("chips").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if (b){ filter.city = b.dataset.city; filter.entidad = ""; render(); } });
+  // Salto directo, no animado: al cambiar de vista el contenido se redibuja
+  // y un desplazamiento suave se queda a medias con el cambio de altura.
   function alInicio(){
-    var suave = !window.matchMedia || !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    try { window.scrollTo({ top: 0, behavior: suave ? "smooth" : "auto" }); }
+    try { window.scrollTo({ top: 0, behavior: "auto" }); }
     catch(e){ window.scrollTo(0, 0); }
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
   }
 
   function ponVista(v){
