@@ -16,6 +16,7 @@
   --line:#E7DFEB; --line-2:#D3C6DA;
   --accent:#7B2482; --accent-soft:#F5EAF7; --on-accent:#FFFFFF;
   --ok:#1E7A55; --ok-soft:#E4F2EB; --bad:#B3261E;
+  --mapa-off:#FFFFFF;
   --shadow:0 1px 2px rgba(26,20,32,.06), 0 8px 24px -16px rgba(26,20,32,.28);
   --shadow-lg:0 24px 60px -24px rgba(26,20,32,.45);
   --r:10px;
@@ -29,6 +30,7 @@
     --line:#332941; --line-2:#463857;
     --accent:#C468CD; --accent-soft:#2C1C34; --on-accent:#1B1022;
     --ok:#6FD3A6; --ok-soft:#173227; --bad:#F2887F;
+    --mapa-off:#221B2B;
     --shadow:0 1px 2px rgba(0,0,0,.5), 0 8px 24px -16px rgba(0,0,0,.8);
     --shadow-lg:0 24px 60px -24px rgba(0,0,0,.9);
   }
@@ -132,6 +134,32 @@ tbody tr:hover{background:var(--accent-soft)}
 .row-end{display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap}
 @media (max-width:520px){ .form-grid{grid-template-columns:1fr} .kv{grid-template-columns:1fr} }
 
+.mapa-box{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px 10px; box-shadow:var(--shadow)}
+.mapa-box svg{display:block; width:100%; height:auto; max-height:62vh}
+.edo{fill:var(--mapa-off); stroke:var(--line-2); stroke-width:.8; stroke-linejoin:round; transition:fill .12s}
+.edo.on{cursor:pointer}
+.edo.on{stroke:var(--surface); stroke-width:1.1}
+.edo.c1{fill:color-mix(in srgb, var(--accent) 38%, var(--mapa-off))}
+.edo.c2{fill:color-mix(in srgb, var(--accent) 68%, var(--mapa-off))}
+.edo.c3{fill:var(--accent)}
+.edo.on:hover{fill:color-mix(in srgb, var(--accent) 80%, var(--ink))}
+.edo.sel{stroke:var(--ink); stroke-width:2.2}
+.edo:focus-visible{outline:none; stroke:var(--ink); stroke-width:2.2}
+.punto{stroke:var(--ink); stroke-width:1.2; cursor:pointer; paint-order:stroke fill}
+.punto.c1{fill:color-mix(in srgb, var(--accent) 38%, var(--mapa-off))}
+.punto.c2{fill:color-mix(in srgb, var(--accent) 68%, var(--mapa-off))}
+.punto.c3{fill:var(--accent)}
+.punto.sel{stroke-width:2.6}
+.leyenda{display:flex; gap:14px; flex-wrap:wrap; justify-content:flex-end; padding:6px 2px 2px; font-size:12px; color:var(--ink-3); font-weight:600}
+.leyenda span{display:inline-flex; align-items:center; gap:6px}
+.sw{width:12px; height:12px; border-radius:3px; display:inline-block}
+.sw.c1{background:color-mix(in srgb, var(--accent) 38%, var(--mapa-off))}
+.sw.c2{background:color-mix(in srgb, var(--accent) 68%, var(--mapa-off))}
+.sw.c3{background:var(--accent)}
+.sw.off{background:var(--mapa-off); border:1px solid var(--line-2)}
+.mapa-head{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin:26px 0 12px; padding-bottom:8px; border-bottom:2px solid var(--accent)}
+.mapa-head h2{font-family:var(--cond); font-weight:700; font-size:23px; margin:0}
+.mapa-pie{margin:14px 2px 0; color:var(--ink-3); font-size:13.5px}
 .reg{margin-bottom:34px}
 .reg-head{display:flex; align-items:baseline; gap:12px; margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--accent)}
 .reg-head h2{font-family:var(--cond); font-weight:700; font-size:23px; margin:0; letter-spacing:.01em}
@@ -162,6 +190,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
       </div>
       <div class="seg" role="group" aria-label="Vista">
         <button id="viewCards" type="button" aria-pressed="true">Tarjetas</button>
+        <button id="viewMapa" type="button" aria-pressed="false">Mapa</button>
         <button id="viewRegion" type="button" aria-pressed="false">Regiones</button>
         <button id="viewTable" type="button" aria-pressed="false">Tabla</button>
       </div>
@@ -180,6 +209,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
 <main>
   <div id="stateBox" class="state"><strong>Cargando directorio…</strong></div>
   <div class="grid" id="grid" hidden></div>
+  <div id="mapaWrap" hidden></div>
   <div id="regionWrap" hidden></div>
   <div class="tablewrap" id="tableWrap" hidden><table id="table"></table></div>
 </main>
@@ -239,7 +269,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   "use strict";
   var ADMIN_SESION_HORAS = 8;
 
-  var clubs = [], filter = {q:"", city:""}, view = "cards", current = null;
+  var clubs = [], filter = {q:"", city:"", entidad:""}, view = "cards", current = null;
   var rol = null;                                  // null | "visor" | "admin"
   function puedeEditar(){ return rol === "admin"; }
   function puedeVerTel(){ return rol !== null; }
@@ -260,16 +290,16 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>',
     pin:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>'
   };
-  var COLS_BASE = [["club","Club"],["region","Región"],["estado","Estado"],["ciudad","Ciudad"],["gerente","Gerente"],["subgerente","Subgerente"],
+  var COLS_BASE = [["club","Club"],["region","Región"],["estado","Estatus"],["ciudad","Ciudad"],["entidad","Estado"],["gerente","Gerente"],["subgerente","Subgerente"],
                    ["direccion","Dirección"],["horario","Horario"],["estacionamiento","Estacionamiento"],
                    ["telClub","Teléfono"],["correo","Correo"],["m2","m²"],["apertura","Apertura"]];
   var COLS_PRIV = [["telGerente","Tel. gerente"],["telSubgerente","Tel. subgerente"]];
   function cols(){
     if (!puedeVerTel()) return COLS_BASE;
-    var out = COLS_BASE.slice(0,6).concat(COLS_PRIV);
-    return out.concat(COLS_BASE.slice(6));
+    var out = COLS_BASE.slice(0,7).concat(COLS_PRIV);
+    return out.concat(COLS_BASE.slice(7));
   }
-  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],["region","Región",0],["estado","Estado",0],
+  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],["entidad","Estado",0],["region","Región",0],["estado","Estatus",0],
                 ["gerente","Gerente",0],["telGerente","Tel. gerente",0],
                 ["subgerente","Subgerente",0],["telSubgerente","Tel. subgerente",0],
                 ["direccion","Dirección",1],
@@ -279,6 +309,12 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
 
   /* ---------- filtrado y render ---------- */
   var REGIONES = ["Región 1","Región 2","Región 3","Región 4","Región 5"];
+  var ENTIDADES = ["Aguascalientes","Baja California","Baja California Sur","Campeche","Chiapas",
+    "Chihuahua","Ciudad de México","Coahuila","Colima","Durango","Guanajuato","Guerrero","Hidalgo",
+    "Jalisco","México","Michoacán","Morelos","Nayarit","Nuevo León","Oaxaca","Puebla","Querétaro",
+    "Quintana Roo","San Luis Potosí","Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz",
+    "Yucatán","Zacatecas"];
+  var mapaData = null, mapaPidiendo = false;
   // Acepta lo que haya guardado (R1, Region 1, 3…) y lo devuelve como "Región N".
   function normRegion(v){
     var m = /(\d)/.exec(String(v == null ? "" : v).trim());
@@ -301,9 +337,10 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
 
   function matches(c){
     if (filter.city && c.ciudad !== filter.city) return false;
+    if (filter.entidad && c.entidad !== filter.entidad) return false;
     if (!filter.q) return true;
     var q = filter.q.toLowerCase();
-    return ["club","ciudad","direccion"].some(function(k){ return String(c[k]||"").toLowerCase().indexOf(q) > -1; });
+    return ["club","ciudad","entidad","direccion"].some(function(k){ return String(c[k]||"").toLowerCase().indexOf(q) > -1; });
   }
   function visible(){ return clubs.filter(matches); }
 
@@ -358,14 +395,83 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
       '<div class="state"><strong>Sin resultados</strong><span>Ajusta la búsqueda o el filtro de ciudad.</span></div>';
   }
 
+  function cargaMapa(){
+    if (mapaData !== null || mapaPidiendo) return;
+    mapaPidiendo = true;
+    fetch("mapa-mx.json", {cache:"force-cache"})
+      .then(function(r){ return r.json(); })
+      .then(function(j){ mapaData = j; })
+      .catch(function(){ mapaData = false; })
+      .then(function(){ mapaPidiendo = false; if (view === "mapa") render(); });
+  }
+
+  // Base del mapa: todo menos el estado seleccionado, para que al elegir uno
+  // el resto del país siga visible y se pueda saltar de un estado a otro.
+  function baseMapa(){
+    return clubs.filter(function(c){
+      var g = filter.entidad; filter.entidad = "";
+      var ok = matches(c); filter.entidad = g; return ok;
+    });
+  }
+
+  function tono(n){ return n >= 7 ? "c3" : n >= 3 ? "c2" : "c1"; }
+
+  function renderMapa(){
+    var caja = $("mapaWrap");
+    if (mapaData === null){ cargaMapa(); caja.innerHTML = '<div class="state"><strong>Cargando mapa…</strong></div>'; return; }
+    if (mapaData === false){ caja.innerHTML = '<div class="state"><strong>No se pudo cargar el mapa</strong><span>Recarga la página para reintentar.</span></div>'; return; }
+
+    var base = baseMapa(), cuenta = {};
+    base.forEach(function(c){ if (c.entidad) cuenta[c.entidad] = (cuenta[c.entidad] || 0) + 1; });
+    var conPresencia = Object.keys(cuenta).length;
+
+    var paths = Object.keys(mapaData.estados).map(function(id){
+      var e = mapaData.estados[id], n = cuenta[e.n] || 0;
+      var cls = "edo" + (n ? " on " + tono(n) : "") + (filter.entidad === e.n ? " sel" : "");
+      return '<path class="' + cls + '" d="' + e.d + '" data-edo="' + esc(e.n) + '" tabindex="' + (n ? "0" : "-1") + '" role="button">'
+        + "<title>" + esc(e.n) + " — " + n + (n === 1 ? " club" : " clubes") + "</title></path>";
+    }).join("");
+
+    // Entidades chicas (CDMX, Morelos, Tlaxcala…): un punto encima para que se vean y se puedan tocar.
+    var puntos = Object.keys(mapaData.estados).map(function(id){
+      var e = mapaData.estados[id], n = cuenta[e.n] || 0;
+      if (!n || !e.c || e.a > 1200) return "";
+      var r = n >= 7 ? 9 : n >= 3 ? 7.5 : 6;
+      return '<circle class="punto ' + tono(n) + (filter.entidad === e.n ? " sel" : "")
+        + '" cx="' + e.c[0] + '" cy="' + e.c[1] + '" r="' + r + '" data-edo="' + esc(e.n) + '">'
+        + "<title>" + esc(e.n) + " — " + n + (n === 1 ? " club" : " clubes") + "</title></circle>";
+    }).join("");
+
+    var detalle;
+    if (filter.entidad){
+      var suyos = base.filter(function(c){ return c.entidad === filter.entidad; });
+      detalle = '<div class="mapa-head"><h2>' + esc(filter.entidad) + '</h2>'
+        + '<span class="reg-n">' + suyos.length + (suyos.length === 1 ? " club" : " clubes") + '</span>'
+        + '<button class="btn btn-ghost" type="button" id="limpiaEdo">Ver todo el país</button></div>'
+        + '<div class="grid">' + suyos.map(card).join("") + "</div>";
+    } else {
+      detalle = '<p class="mapa-pie">' + conPresencia + ' estados con presencia · ' + base.length
+        + ' clubes. Toca un estado morado para ver los suyos.</p>';
+    }
+
+    caja.innerHTML = '<div class="mapa-box"><svg viewBox="0 0 ' + mapaData.w + ' ' + mapaData.h + '" role="img" aria-label="Mapa de presencia por estado">'
+      + paths + puntos + "</svg>"
+      + '<div class="leyenda"><span><i class="sw c1"></i>1–2</span><span><i class="sw c2"></i>3–6</span>'
+      + '<span><i class="sw c3"></i>7+</span><span><i class="sw off"></i>Sin clubes</span></div>'
+      + "</div>" + detalle;
+  }
+
   function render(){
     var list = visible();
     $("count").textContent = list.length + (list.length === 1 ? " club" : " clubes");
     $("stateBox").hidden = true;
     $("grid").hidden = view !== "cards";
+    $("mapaWrap").hidden = view !== "mapa";
     $("regionWrap").hidden = view !== "region";
     $("tableWrap").hidden = view !== "table";
-    if (view === "cards"){
+    if (view === "mapa"){
+      renderMapa();
+    } else if (view === "cards"){
       $("grid").innerHTML = list.length ? list.map(card).join("")
         : '<div class="state" style="grid-column:1/-1"><strong>Sin resultados</strong><span>Ajusta la búsqueda o el filtro de ciudad.</span></div>';
     } else if (view === "region"){
@@ -409,7 +515,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
         '<div class="sect"><h4>Ubicación</h4><dl class="kv">'
       + row("Dirección", c.direccion) + row("Superficie", c.m2 ? c.m2 + " m²" : "")
       + row("Apertura", porAbrir(c) ? "Pendiente de apertura" : c.apertura)
-      + row("Región", normRegion(c.region))
+      + row("Estado", c.entidad) + row("Región", normRegion(c.region))
       + row("Google Maps", c.maps ? "Abrir ubicación" : "", c.maps) + "</dl></div>"
       + '<div class="sect"><h4>Horario y servicios</h4><dl class="kv">'
       + row("Horario", c.horario) + row("Estacionamiento", c.estacionamiento) + "</dl></div>"
@@ -459,7 +565,14 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     $("editFields").innerHTML = FIELDS.map(function(f){
       var key = f[0], val = c ? (c[key] || "") : "";
       var ctrl;
-      if (key === "region"){
+      if (key === "entidad"){
+        ctrl = '<select id="f_entidad">'
+          + '<option value=""' + (val ? "" : " selected") + '>Sin asignar</option>'
+          + ENTIDADES.map(function(e){
+              return '<option value="' + esc(e) + '"' + (val === e ? " selected" : "") + ">" + esc(e) + "</option>";
+            }).join("")
+          + "</select>";
+      } else if (key === "region"){
         var actual = normRegion(val);
         ctrl = '<select id="f_region">'
           + '<option value=""' + (actual ? "" : " selected") + '>Sin asignar</option>'
@@ -560,15 +673,16 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
 
   /* ---------- eventos ---------- */
   $("q").addEventListener("input", function(e){ filter.q = e.target.value.trim(); render(); });
-  $("chips").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if (b){ filter.city = b.dataset.city; render(); } });
+  $("chips").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if (b){ filter.city = b.dataset.city; filter.entidad = ""; render(); } });
   function ponVista(v){
     view = v;
-    [["cards","viewCards"],["region","viewRegion"],["table","viewTable"]].forEach(function(par){
+    [["cards","viewCards"],["mapa","viewMapa"],["region","viewRegion"],["table","viewTable"]].forEach(function(par){
       $(par[1]).setAttribute("aria-pressed", v === par[0] ? "true" : "false");
     });
     render();
   }
   $("viewCards").addEventListener("click", function(){ ponVista("cards"); });
+  $("viewMapa").addEventListener("click", function(){ cargaMapa(); ponVista("mapa"); });
   $("viewRegion").addEventListener("click", function(){ ponVista("region"); });
   $("viewTable").addEventListener("click", function(){ ponVista("table"); });
   $("csvBtn").addEventListener("click", exportCsv);
@@ -578,6 +692,24 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   }
   $("grid").addEventListener("click", clicTarjeta);
   $("regionWrap").addEventListener("click", clicTarjeta);
+  $("mapaWrap").addEventListener("click", function(e){
+    if (e.target.id === "limpiaEdo"){ filter.entidad = ""; render(); return; }
+    var p = e.target.closest("path.edo, circle.punto");
+    if (p){
+      if (p.tagName === "path" && !p.classList.contains("on")) return;
+      var edo = p.dataset.edo;
+      filter.entidad = (filter.entidad === edo) ? "" : edo;
+      filter.city = "";
+      render();
+      return;
+    }
+    clicTarjeta(e);
+  });
+  $("mapaWrap").addEventListener("keydown", function(e){
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var p = e.target.closest && e.target.closest("path.edo");
+    if (p && p.classList.contains("on")){ e.preventDefault(); p.dispatchEvent(new MouseEvent("click", {bubbles:true})); }
+  });
   $("grid").addEventListener("keydown", function(e){
     if (e.key !== "Enter" && e.key !== " ") return;
     var c = e.target.closest(".card"); if (c && e.target === c){ e.preventDefault(); openDrawer(c.dataset.id); }

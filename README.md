@@ -10,6 +10,7 @@ nunca recibe credenciales ni tokens.
 |---|---|
 | `index.html` | El sitio (búsqueda, filtros, fichas, tabla, CSV y modo admin) |
 | `clubes.json` | Semilla inicial del directorio; se usa mientras KV esté vacío |
+| `mapa-mx.json` | Trazos de las 32 entidades para el mapa (se carga solo al abrir esa vista) |
 | `logo.png` | Marca FPT |
 | `_worker.js` | Backend: login con sesión firmada (8 h), lectura y escritura del directorio |
 
