@@ -143,7 +143,9 @@ tbody tr:hover{background:var(--accent-soft)}
 .edo.c2{fill:color-mix(in srgb, var(--accent) 68%, var(--mapa-off))}
 .edo.c3{fill:var(--accent)}
 .edo.on:hover{fill:color-mix(in srgb, var(--accent) 80%, var(--ink))}
-.edo.sel{stroke:var(--ink); stroke-width:2.2}
+.edo.prox{fill:var(--mapa-off); stroke:var(--accent); stroke-width:1.6; stroke-dasharray:4 3}
+.edo.sel{stroke:var(--ink); stroke-width:2.2; stroke-dasharray:none}
+.punto.prox{fill:var(--mapa-off); stroke:var(--accent); stroke-width:2; stroke-dasharray:3 2}
 .edo:focus-visible{outline:none; stroke:var(--ink); stroke-width:2.2}
 .punto{stroke:var(--ink); stroke-width:1.2; cursor:pointer; paint-order:stroke fill}
 .punto.c1{fill:color-mix(in srgb, var(--accent) 38%, var(--mapa-off))}
@@ -156,6 +158,7 @@ tbody tr:hover{background:var(--accent-soft)}
 .sw.c1{background:color-mix(in srgb, var(--accent) 38%, var(--mapa-off))}
 .sw.c2{background:color-mix(in srgb, var(--accent) 68%, var(--mapa-off))}
 .sw.c3{background:var(--accent)}
+.sw.prox{background:var(--mapa-off); border:1.5px dashed var(--accent)}
 .sw.off{background:var(--mapa-off); border:1px solid var(--line-2)}
 .mapa-head{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin:26px 0 12px; padding-bottom:8px; border-bottom:2px solid var(--accent)}
 .mapa-head h2{font-family:var(--cond); font-weight:700; font-size:23px; margin:0}
@@ -421,25 +424,37 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     if (mapaData === null){ cargaMapa(); caja.innerHTML = '<div class="state"><strong>Cargando mapa…</strong></div>'; return; }
     if (mapaData === false){ caja.innerHTML = '<div class="state"><strong>No se pudo cargar el mapa</strong><span>Recarga la página para reintentar.</span></div>'; return; }
 
-    var base = baseMapa(), cuenta = {};
-    base.forEach(function(c){ if (c.entidad) cuenta[c.entidad] = (cuenta[c.entidad] || 0) + 1; });
+    var base = baseMapa(), cuenta = {}, pend = {};
+    base.forEach(function(c){
+      if (!c.entidad) return;
+      if (porAbrir(c)) pend[c.entidad] = (pend[c.entidad] || 0) + 1;
+      else cuenta[c.entidad] = (cuenta[c.entidad] || 0) + 1;
+    });
     var conPresencia = Object.keys(cuenta).length;
+    var soloPend = Object.keys(pend).filter(function(e){ return !cuenta[e]; }).length;
+
+    function rotulo(nombre, n, p){
+      var t = esc(nombre) + " — " + (n ? n + (n === 1 ? " club abierto" : " clubes abiertos") : "sin clubes abiertos");
+      return p ? t + ", " + p + " por abrir" : t;
+    }
 
     var paths = Object.keys(mapaData.estados).map(function(id){
-      var e = mapaData.estados[id], n = cuenta[e.n] || 0;
-      var cls = "edo" + (n ? " on " + tono(n) : "") + (filter.entidad === e.n ? " sel" : "");
-      return '<path class="' + cls + '" d="' + e.d + '" data-edo="' + esc(e.n) + '" tabindex="' + (n ? "0" : "-1") + '" role="button">'
-        + "<title>" + esc(e.n) + " — " + n + (n === 1 ? " club" : " clubes") + "</title></path>";
+      var e = mapaData.estados[id], n = cuenta[e.n] || 0, p = pend[e.n] || 0;
+      var vivo = n > 0 || p > 0;
+      var cls = "edo" + (n ? " on " + tono(n) : (p ? " on prox" : ""))
+        + (filter.entidad === e.n ? " sel" : "");
+      return '<path class="' + cls + '" d="' + e.d + '" data-edo="' + esc(e.n) + '" tabindex="' + (vivo ? "0" : "-1") + '" role="button">'
+        + "<title>" + rotulo(e.n, n, p) + "</title></path>";
     }).join("");
 
     // Entidades chicas (CDMX, Morelos, Tlaxcala…): un punto encima para que se vean y se puedan tocar.
     var puntos = Object.keys(mapaData.estados).map(function(id){
-      var e = mapaData.estados[id], n = cuenta[e.n] || 0;
-      if (!n || !e.c || e.a > 1200) return "";
+      var e = mapaData.estados[id], n = cuenta[e.n] || 0, p = pend[e.n] || 0;
+      if ((!n && !p) || !e.c || e.a > 1200) return "";
       var r = n >= 7 ? 9 : n >= 3 ? 7.5 : 6;
-      return '<circle class="punto ' + tono(n) + (filter.entidad === e.n ? " sel" : "")
+      return '<circle class="punto ' + (n ? tono(n) : "prox") + (filter.entidad === e.n ? " sel" : "")
         + '" cx="' + e.c[0] + '" cy="' + e.c[1] + '" r="' + r + '" data-edo="' + esc(e.n) + '">'
-        + "<title>" + esc(e.n) + " — " + n + (n === 1 ? " club" : " clubes") + "</title></circle>";
+        + "<title>" + rotulo(e.n, n, p) + "</title></circle>";
     }).join("");
 
     var detalle;
@@ -450,14 +465,18 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
         + '<button class="btn btn-ghost" type="button" id="limpiaEdo">Ver todo el país</button></div>'
         + '<div class="grid">' + suyos.map(card).join("") + "</div>";
     } else {
-      detalle = '<p class="mapa-pie">' + conPresencia + ' estados con presencia · ' + base.length
-        + ' clubes. Toca un estado morado para ver los suyos.</p>';
+      var abiertos = base.filter(function(c){ return !porAbrir(c); }).length;
+      detalle = '<p class="mapa-pie">' + conPresencia + ' estados con presencia · ' + abiertos
+        + (abiertos === 1 ? " club abierto" : " clubes abiertos")
+        + (soloPend ? ' · ' + soloPend + (soloPend === 1 ? " estado" : " estados") + ' con apertura en camino' : "")
+        + '. Toca un estado para ver los suyos.</p>';
     }
 
     caja.innerHTML = '<div class="mapa-box"><svg viewBox="0 0 ' + mapaData.w + ' ' + mapaData.h + '" role="img" aria-label="Mapa de presencia por estado">'
       + paths + puntos + "</svg>"
       + '<div class="leyenda"><span><i class="sw c1"></i>1–2</span><span><i class="sw c2"></i>3–6</span>'
-      + '<span><i class="sw c3"></i>7+</span><span><i class="sw off"></i>Sin clubes</span></div>'
+      + '<span><i class="sw c3"></i>7+</span><span><i class="sw prox"></i>Por abrir</span>'
+      + '<span><i class="sw off"></i>Sin clubes</span></div>'
       + "</div>" + detalle;
   }
 
