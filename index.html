@@ -134,9 +134,17 @@ tbody tr:hover{background:var(--accent-soft)}
 .row-end{display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap}
 @media (max-width:520px){ .form-grid{grid-template-columns:1fr} .kv{grid-template-columns:1fr} }
 
-.mapa-box{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px 10px; box-shadow:var(--shadow)}
-.mapa-box svg{display:block; width:100%; height:auto; max-height:62vh}
-.edo{fill:var(--mapa-off); stroke:var(--line-2); stroke-width:.8; stroke-linejoin:round; transition:fill .12s}
+.mapa-box{position:relative; background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px 16px 10px; box-shadow:var(--shadow)}
+.mapa-box svg{display:block; width:100%; height:auto; max-height:62vh; touch-action:pan-y; overflow:hidden}
+.mapa-box svg.movible{cursor:grab}
+.mapa-box svg.movible:active{cursor:grabbing}
+.zoom-ui{position:absolute; top:12px; right:14px; z-index:2; display:flex; flex-direction:column; gap:5px}
+.zbtn{width:32px; height:32px; border-radius:9px; border:1px solid var(--line-2); background:var(--surface); color:var(--ink); font-size:17px; font-weight:700; line-height:1; cursor:pointer; box-shadow:var(--shadow); display:grid; place-items:center}
+.zbtn:hover{background:var(--panel); border-color:var(--accent)}
+.zbtn:disabled{opacity:.4; cursor:default; border-color:var(--line-2); background:var(--surface)}
+.pista{margin-right:auto; color:var(--ink-3); font-weight:500}
+@media (max-width:560px){ .pista{display:none} }
+.edo{fill:var(--mapa-off); stroke:var(--line-2); stroke-width:.8; stroke-linejoin:round; transition:fill .12s; vector-effect:non-scaling-stroke}
 .edo.on{cursor:pointer}
 .edo.on{stroke:var(--surface); stroke-width:1.1}
 .edo.c1{fill:color-mix(in srgb, var(--accent) 38%, var(--mapa-off))}
@@ -147,7 +155,8 @@ tbody tr:hover{background:var(--accent-soft)}
 .edo.sel{stroke:var(--ink); stroke-width:2.2; stroke-dasharray:none}
 .punto.prox{fill:var(--mapa-off); stroke:var(--accent); stroke-width:2; stroke-dasharray:3 2}
 .edo:focus-visible{outline:none; stroke:var(--ink); stroke-width:2.2}
-.punto{stroke:var(--ink); stroke-width:1.2; cursor:pointer; paint-order:stroke fill}
+.punto{stroke:var(--ink); stroke-width:1.2; cursor:pointer; paint-order:stroke fill; vector-effect:non-scaling-stroke; transition:opacity .15s}
+#capaMapa.sin-puntos .punto{opacity:0; pointer-events:none}
 .punto.c1{fill:color-mix(in srgb, var(--accent) 38%, var(--mapa-off))}
 .punto.c2{fill:color-mix(in srgb, var(--accent) 68%, var(--mapa-off))}
 .punto.c3{fill:var(--accent)}
@@ -318,6 +327,8 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     "Quintana Roo","San Luis Potosí","Sinaloa","Sonora","Tabasco","Tamaulipas","Tlaxcala","Veracruz",
     "Yucatán","Zacatecas"];
   var mapaData = null, mapaPidiendo = false;
+  var zk = 1, ztx = 0, zty = 0;          // escala y desplazamiento del mapa
+  var Z_MIN = 1, Z_MAX = 14, Z_PUNTOS = 2.6;   // arriba de Z_PUNTOS ya no hacen falta los puntos
   // Acepta lo que haya guardado (R1, Region 1, 3…) y lo devuelve como "Región N".
   function normRegion(v){
     var m = /(\d)/.exec(String(v == null ? "" : v).trim());
@@ -472,12 +483,128 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
         + '. Toca un estado para ver los suyos.</p>';
     }
 
-    caja.innerHTML = '<div class="mapa-box"><svg viewBox="0 0 ' + mapaData.w + ' ' + mapaData.h + '" role="img" aria-label="Mapa de presencia por estado">'
-      + paths + puntos + "</svg>"
-      + '<div class="leyenda"><span><i class="sw c1"></i>1–2</span><span><i class="sw c2"></i>3–6</span>'
+    caja.innerHTML = '<div class="mapa-box">'
+      + '<div class="zoom-ui">'
+      +   '<button type="button" class="zbtn" data-z="mas" aria-label="Acercar">+</button>'
+      +   '<button type="button" class="zbtn" data-z="menos" aria-label="Alejar">\u2212</button>'
+      +   '<button type="button" class="zbtn" id="zReset" data-z="reset" aria-label="Ver todo el mapa">\u21BA</button>'
+      + "</div>"
+      + '<svg id="svgMapa" viewBox="0 0 ' + mapaData.w + ' ' + mapaData.h + '" role="img" aria-label="Mapa de presencia por estado">'
+      + '<g id="capaMapa">' + paths + puntos + "</g></svg>"
+      + '<div class="leyenda"><span class="pista">Arrastra para mover · rueda o pellizco para acercar</span>'
+      + '<span><i class="sw c1"></i>1–2</span><span><i class="sw c2"></i>3–6</span>'
       + '<span><i class="sw c3"></i>7+</span><span><i class="sw prox"></i>Por abrir</span>'
       + '<span><i class="sw off"></i>Sin clubes</span></div>'
       + "</div>" + detalle;
+
+    aplicaZoom();
+    conectaZoom();
+  }
+
+  function limitaZoom(){
+    if (zk <= Z_MIN){ zk = Z_MIN; ztx = 0; zty = 0; return; }
+    if (zk > Z_MAX) zk = Z_MAX;
+    var W = mapaData.w, H = mapaData.h;
+    ztx = Math.min(0, Math.max(W * (1 - zk), ztx));
+    zty = Math.min(0, Math.max(H * (1 - zk), zty));
+  }
+
+  function aplicaZoom(){
+    var capa = $("capaMapa"), svg = $("svgMapa");
+    if (!capa || !svg) return;
+    limitaZoom();
+    capa.setAttribute("transform", "translate(" + ztx.toFixed(2) + "," + zty.toFixed(2) + ") scale(" + zk.toFixed(4) + ")");
+    // Con el mapa acercado los estados chicos ya se ven solos: los puntos estorban.
+    capa.classList.toggle("sin-puntos", zk >= Z_PUNTOS);
+    svg.classList.toggle("movible", zk > Z_MIN);
+    // En celular: con el mapa sin acercar la página debe poder desplazarse.
+    svg.style.touchAction = zk > Z_MIN ? "none" : "pan-y";
+    var r = $("zReset"); if (r) r.disabled = zk === Z_MIN;
+  }
+
+  // Acerca o aleja dejando fijo el punto (ux, uy) en unidades del mapa.
+  function zoomEn(factor, ux, uy){
+    var nk = Math.min(Z_MAX, Math.max(Z_MIN, zk * factor));
+    if (nk === zk) return;
+    ztx = ux - (ux - ztx) * (nk / zk);
+    zty = uy - (uy - zty) * (nk / zk);
+    zk = nk;
+    aplicaZoom();
+  }
+
+  function aUnidades(svg, clientX, clientY){
+    var r = svg.getBoundingClientRect();
+    return [ (clientX - r.left) / r.width * mapaData.w,
+             (clientY - r.top) / r.height * mapaData.h ];
+  }
+
+  function conectaZoom(){
+    var svg = $("svgMapa");
+    if (!svg) return;
+    var punteros = {}, arrastro = null, movido = 0, pellizco = 0;
+
+    svg.addEventListener("wheel", function(e){
+      e.preventDefault();
+      var u = aUnidades(svg, e.clientX, e.clientY);
+      zoomEn(e.deltaY < 0 ? 1.22 : 1 / 1.22, u[0], u[1]);
+    }, { passive: false });
+
+    svg.addEventListener("dblclick", function(e){
+      var u = aUnidades(svg, e.clientX, e.clientY);
+      zoomEn(1.9, u[0], u[1]);
+    });
+
+    svg.addEventListener("pointerdown", function(e){
+      punteros[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var ids = Object.keys(punteros);
+      if (ids.length === 1){
+        movido = 0;
+        if (zk > Z_MIN){
+          arrastro = { x: e.clientX, y: e.clientY };
+          svg.setPointerCapture(e.pointerId);
+        }
+      } else if (ids.length === 2){
+        arrastro = null;
+        var a = punteros[ids[0]], b = punteros[ids[1]];
+        pellizco = Math.hypot(a.x - b.x, a.y - b.y);
+      }
+    });
+
+    svg.addEventListener("pointermove", function(e){
+      if (!punteros[e.pointerId]) return;
+      punteros[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var ids = Object.keys(punteros);
+
+      if (ids.length >= 2 && pellizco){
+        var a = punteros[ids[0]], b = punteros[ids[1]];
+        var d = Math.hypot(a.x - b.x, a.y - b.y);
+        if (d > 0){
+          var u = aUnidades(svg, (a.x + b.x) / 2, (a.y + b.y) / 2);
+          zoomEn(d / pellizco, u[0], u[1]);
+          pellizco = d;
+        }
+        return;
+      }
+
+      if (!arrastro) return;
+      var r = svg.getBoundingClientRect();
+      var dx = (e.clientX - arrastro.x) / r.width * mapaData.w;
+      var dy = (e.clientY - arrastro.y) / r.height * mapaData.h;
+      movido += Math.abs(e.clientX - arrastro.x) + Math.abs(e.clientY - arrastro.y);
+      arrastro = { x: e.clientX, y: e.clientY };
+      ztx += dx; zty += dy;
+      aplicaZoom();
+    });
+
+    function suelta(e){
+      delete punteros[e.pointerId];
+      if (Object.keys(punteros).length < 2) pellizco = 0;
+      if (!Object.keys(punteros).length) arrastro = null;
+    }
+    svg.addEventListener("pointerup", suelta);
+    svg.addEventListener("pointercancel", suelta);
+    // Un arrastre no debe contar como clic en el estado.
+    svg.addEventListener("click", function(e){ if (movido > 6){ e.stopPropagation(); movido = 0; } }, true);
   }
 
   function render(){
@@ -722,6 +849,19 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   $("grid").addEventListener("click", clicTarjeta);
   $("regionWrap").addEventListener("click", clicTarjeta);
   $("mapaWrap").addEventListener("click", function(e){
+    var z = e.target.closest(".zbtn");
+    if (z){
+      var svg = $("svgMapa"), cx = mapaData.w / 2, cy = mapaData.h / 2;
+      if (svg){
+        var r = svg.getBoundingClientRect();
+        var u = aUnidades(svg, r.left + r.width / 2, r.top + r.height / 2);
+        cx = u[0]; cy = u[1];
+      }
+      if (z.dataset.z === "mas") zoomEn(1.6, cx, cy);
+      else if (z.dataset.z === "menos") zoomEn(1 / 1.6, cx, cy);
+      else { zk = Z_MIN; ztx = 0; zty = 0; aplicaZoom(); }
+      return;
+    }
     if (e.target.id === "limpiaEdo"){ filter.entidad = ""; render(); alInicio(); return; }
     var p = e.target.closest("path.edo, circle.punto");
     if (p){
