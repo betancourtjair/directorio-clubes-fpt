@@ -693,12 +693,19 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   /* ---------- eventos ---------- */
   $("q").addEventListener("input", function(e){ filter.q = e.target.value.trim(); render(); });
   $("chips").addEventListener("click", function(e){ var b = e.target.closest(".chip"); if (b){ filter.city = b.dataset.city; filter.entidad = ""; render(); } });
+  function alInicio(){
+    var suave = !window.matchMedia || !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    try { window.scrollTo({ top: 0, behavior: suave ? "smooth" : "auto" }); }
+    catch(e){ window.scrollTo(0, 0); }
+  }
+
   function ponVista(v){
     view = v;
     [["cards","viewCards"],["mapa","viewMapa"],["region","viewRegion"],["table","viewTable"]].forEach(function(par){
       $(par[1]).setAttribute("aria-pressed", v === par[0] ? "true" : "false");
     });
     render();
+    alInicio();
   }
   $("viewCards").addEventListener("click", function(){ ponVista("cards"); });
   $("viewMapa").addEventListener("click", function(){ cargaMapa(); ponVista("mapa"); });
@@ -712,7 +719,7 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   $("grid").addEventListener("click", clicTarjeta);
   $("regionWrap").addEventListener("click", clicTarjeta);
   $("mapaWrap").addEventListener("click", function(e){
-    if (e.target.id === "limpiaEdo"){ filter.entidad = ""; render(); return; }
+    if (e.target.id === "limpiaEdo"){ filter.entidad = ""; render(); alInicio(); return; }
     var p = e.target.closest("path.edo, circle.punto");
     if (p){
       if (p.tagName === "path" && !p.classList.contains("on")) return;
