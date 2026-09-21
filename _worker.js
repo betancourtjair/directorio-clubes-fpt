@@ -84,12 +84,13 @@ function sesionDe(request, env) {
 const CAMPOS = {
   id: 12, club: 120, ciudad: 60, entidad: 30, region: 20, estado: 12, direccion: 400, m2: 20, apertura: 20,
   horario: 400, estacionamiento: 200, telClub: 40, correo: 120, maps: 300,
-  gerente: 120, telGerente: 40, subgerente: 120, telSubgerente: 40
+  gerente: 120, telGerente: 40, subgerente: 120, telSubgerente: 40,
+  idLogically: 20
 };
 
 // Campos que solo se envian al navegador cuando hay sesion iniciada.
 // Un visitante anonimo nunca los recibe, ni siquiera en el codigo fuente.
-const PRIVADOS = ["telGerente", "telSubgerente"];
+const PRIVADOS = ["telGerente", "telSubgerente", "idLogically"];
 
 function sinPrivados(lista) {
   return lista.map(c => {

@@ -86,6 +86,7 @@ main{max-width:1400px; margin:0 auto; padding-block:16px 56px; padding-inline:20
 .card-head{display:flex; gap:10px; align-items:flex-start; justify-content:space-between}
 .card h3{font-family:var(--cond); font-weight:700; font-size:21px; margin:0; line-height:1.1; text-wrap:balance}
 .city{font-family:var(--cond); font-weight:600; font-size:12px; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); margin-top:3px}
+.id-int{display:inline-block; margin-left:6px; padding:1px 6px; border-radius:999px; background:var(--surface-2,#F4F0F7); color:var(--ink-3); letter-spacing:.06em}
 .addr{color:var(--ink-2); font-size:13.5px; margin:0; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
 .person{display:flex; align-items:baseline; gap:8px; font-size:13.5px; border-top:1px dashed var(--line); padding-top:10px; margin-top:auto}
 .person .role{font-family:var(--cond); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); font-weight:600; flex:none}
@@ -306,12 +307,14 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
                    ["direccion","Dirección"],["horario","Horario"],["estacionamiento","Estacionamiento"],
                    ["telClub","Teléfono"],["correo","Correo"],["m2","m²"],["apertura","Apertura"]];
   var COLS_PRIV = [["telGerente","Tel. gerente"],["telSubgerente","Tel. subgerente"]];
+  // El ID Logically es dato interno: solo aparece cuando hay sesión.
+  var COLS_ID = [["idLogically","ID Logically"]];
   function cols(){
     if (!puedeVerTel()) return COLS_BASE;
-    var out = COLS_BASE.slice(0,7).concat(COLS_PRIV);
+    var out = COLS_BASE.slice(0,1).concat(COLS_ID, COLS_BASE.slice(1,7), COLS_PRIV);
     return out.concat(COLS_BASE.slice(7));
   }
-  var FIELDS = [["club","Club",1],["ciudad","Ciudad",0],["entidad","Estado",0],["region","Región",0],["estado","Estatus",0],
+  var FIELDS = [["club","Club",1],["idLogically","ID Logically",0],["ciudad","Ciudad",0],["entidad","Estado",0],["region","Región",0],["estado","Estatus",0],
                 ["gerente","Gerente",0],["telGerente","Tel. gerente",0],
                 ["subgerente","Subgerente",0],["telSubgerente","Tel. subgerente",0],
                 ["direccion","Dirección",1],
@@ -356,7 +359,9 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     if (filter.entidad && c.entidad !== filter.entidad) return false;
     if (!filter.q) return true;
     var q = filter.q.toLowerCase();
-    return ["club","ciudad","entidad","direccion"].some(function(k){ return String(c[k]||"").toLowerCase().indexOf(q) > -1; });
+    var campos = ["club","ciudad","entidad","direccion"];
+    if (puedeVerTel()) campos = campos.concat("idLogically");
+    return campos.some(function(k){ return String(c[k]||"").toLowerCase().indexOf(q) > -1; });
   }
   function visible(){ return clubs.filter(matches); }
 
@@ -376,7 +381,8 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     if (c.correo) acts += '<a class="qbtn" href="mailto:'+esc(c.correo)+'" data-stop>'+ICON.mail+'Correo</a>';
     if (c.maps) acts += '<a class="qbtn" href="'+esc(c.maps)+'" target="_blank" rel="noopener" data-stop>'+ICON.pin+'Mapa</a>';
     return '<div class="card" role="button" tabindex="0" data-id="'+esc(c.id)+'">'
-      + '<div class="card-head"><div style="min-width:0"><h3>'+esc(c.club)+'</h3><div class="city">'+esc(c.ciudad||"")+'</div></div>'
+      + '<div class="card-head"><div style="min-width:0"><h3>'+esc(c.club)+'</h3><div class="city">'+esc(c.ciudad||"")
+        + (puedeVerTel() && c.idLogically ? ' <span class="id-int">ID '+esc(c.idLogically)+'</span>' : '') + '</div></div>'
         + (porAbrir(c) ? '<span class="tag-soon">Por abrir</span>' : '') + '</div>'
       + (c.direccion ? '<p class="addr">'+esc(c.direccion)+'</p>' : '<p class="addr" style="color:var(--ink-3)">Dirección pendiente</p>')
       + '<div class="quick">'+acts+'</div>'
@@ -660,7 +666,10 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     $("dName").textContent = c.club;
     $("dCity").textContent = c.ciudad || "";
     $("dBody").innerHTML =
-        '<div class="sect"><h4>Ubicación</h4><dl class="kv">'
+        (puedeVerTel() && c.idLogically
+          ? '<div class="sect"><h4>Identificación interna</h4><dl class="kv">' + row("ID Logically", c.idLogically) + "</dl></div>"
+          : "")
+      + '<div class="sect"><h4>Ubicación</h4><dl class="kv">'
       + row("Dirección", c.direccion) + row("Superficie", c.m2 ? c.m2 + " m²" : "")
       + row("Apertura", porAbrir(c) ? "Pendiente de apertura" : c.apertura)
       + row("Estado", c.entidad) + row("Región", normRegion(c.region))
