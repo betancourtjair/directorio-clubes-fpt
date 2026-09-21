@@ -7,7 +7,8 @@
 //   PUT    /api/clubes   reemplaza el directorio; requiere sesión
 //   GET    /api/sesion   dice si esta visita tiene sesión de administrador
 //
-// Variables de entorno (secretos del proyecto): ADMIN_USER, ADMIN_PASS, SESSION_SECRET
+// Variables de entorno (secretos del proyecto): ADMIN_USER, ADMIN_PASS, VISOR_PASS, SESSION_SECRET
+// Un cambio de estas variables solo surte efecto en el siguiente despliegue (2026-09-21).
 // Binding de KV: DIRECTORIO
 
 const SESSION = "fpt_sesion";
