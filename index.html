@@ -176,7 +176,10 @@ tbody tr:hover{background:var(--accent-soft)}
 .reg{margin-bottom:34px}
 .reg-head{display:flex; align-items:baseline; gap:12px; margin:0 0 12px; padding-bottom:8px; border-bottom:2px solid var(--accent)}
 .reg-head h2{font-family:var(--cond); font-weight:700; font-size:23px; margin:0; letter-spacing:.01em}
-.reg-n{font-size:12.5px; font-weight:600; color:var(--ink-3); font-variant-numeric:tabular-nums}
+.reg-n{font-size:12.5px; font-weight:600; color:var(--ink-3); font-variant-numeric:tabular-nums; margin-left:auto}
+.reg-jefe{font-family:var(--cond); font-size:13px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--accent)}
+.reg-jefe b{font-weight:700; color:var(--ink)}
+@media (max-width:640px){ .reg-head{flex-wrap:wrap} .reg-jefe{flex-basis:100%; order:3} }
 .state{text-align:center; padding:70px 20px; color:var(--ink-3); display:flex; flex-direction:column; gap:10px; align-items:center}
 .state strong{font-family:var(--cond); font-size:22px; color:var(--ink); font-weight:700}
 .toast{position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--ink); color:var(--bg); padding:11px 18px; border-radius:999px; font-weight:600; font-size:14px; z-index:90; opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; max-width:90vw; text-align:center}
@@ -402,13 +405,24 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
             }).join("") + "</tr>"; }).join("")
       + "</tbody>";
   }
+  // Quién lleva cada región. Si mañana cambia un regional, se ajusta aquí.
+  var REGIONALES = {
+    "Región 1": "Amanda Lorena de la Rosa Pulido",
+    "Región 2": "Atenas Donaji Cerecedo Sierra",
+    "Región 3": "Eduardo Martines García",
+    "Región 4": "Jesús López Guzmán",
+    "Región 5": "Salvador Mora Márquez"
+  };
+
   function renderRegiones(list){
     var orden = REGIONES.concat([""]);
     var html = orden.map(function(r){
       var del = list.filter(function(c){ return normRegion(c.region) === r; });
       if (!del.length) return "";
+      var jefe = REGIONALES[r];
       return '<section class="reg">'
         + '<div class="reg-head"><h2>' + esc(etiqueta(r)) + '</h2>'
+        + (jefe ? '<span class="reg-jefe">Regional <b>' + esc(jefe) + '</b></span>' : '')
         + '<span class="reg-n">' + del.length + (del.length === 1 ? " club" : " clubes") + '</span></div>'
         + '<div class="grid">' + del.map(card).join("") + '</div>'
         + '</section>';
