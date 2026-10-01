@@ -309,7 +309,8 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
   var COLS_BASE = [["club","Club"],["region","Región"],["estado","Estatus"],["ciudad","Ciudad"],["entidad","Estado"],["gerente","Gerente"],["subgerente","Subgerente"],
                    ["direccion","Dirección"],["horario","Horario"],["estacionamiento","Estacionamiento"],
                    ["telClub","Teléfono"],["correo","Correo"],["m2","m²"],["apertura","Apertura"]];
-  var COLS_PRIV = [["telGerente","Tel. gerente"],["telSubgerente","Tel. subgerente"]];
+  var COLS_PRIV = [["telGerente","Tel. gerente"],["telSubgerente","Tel. subgerente"],
+                   ["adminPlaza","Admin. de la plaza"],["correoAdminPlaza","Correo admin. plaza"],["telAdminPlaza","Tel. admin. plaza"]];
   // El ID Logically es dato interno: solo aparece cuando hay sesión.
   var COLS_ID = [["idLogically","ID Logically"]];
   function cols(){
@@ -323,7 +324,9 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
                 ["direccion","Dirección",1],
                 ["horario","Horario de operación",1],["estacionamiento","Costo de estacionamiento",1],
                 ["telClub","Teléfono del club",0],["correo","Correo del club",0],
-                ["m2","Superficie (m²)",0],["apertura","Apertura",0],["maps","Liga de Google Maps",1]];
+                ["m2","Superficie (m²)",0],["apertura","Apertura",0],["maps","Liga de Google Maps",1],
+                ["adminPlaza","Administrador de la plaza",0],["correoAdminPlaza","Correo del administrador",0],
+                ["telAdminPlaza","Teléfono del administrador",1]];
 
   /* ---------- filtrado y render ---------- */
   var REGIONES = ["Región 1","Región 2","Región 3","Región 4","Región 5"];
@@ -673,6 +676,18 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
     return '<div class="sect"><h4>Equipo del club</h4><dl class="kv">' + filas + "</dl>" + nota + "</div>";
   }
 
+  // Contacto del administrador de la plaza donde está el club: dato interno,
+  // solo se arma cuando la visita ya entró con contraseña.
+  function adminPlaza(c){
+    if (!puedeVerTel()) return "";
+    if (!c.adminPlaza && !c.correoAdminPlaza && !c.telAdminPlaza) return "";
+    return '<div class="sect"><h4>Administración de la plaza</h4><dl class="kv">'
+      + row("Contacto", c.adminPlaza)
+      + row("Correo", c.correoAdminPlaza, c.correoAdminPlaza ? "mailto:" + c.correoAdminPlaza : "")
+      + row("Teléfono", c.telAdminPlaza, /^[\d\s()+.-]+$/.test(c.telAdminPlaza || "") ? "tel:" + tel(c.telAdminPlaza) : "")
+      + "</dl></div>";
+  }
+
   function openDrawer(id){
     var c = clubs.filter(function(x){ return x.id === id; })[0];
     if (!c) return;
@@ -693,7 +708,8 @@ footer{max-width:1400px; margin:0 auto; padding:0 20px 40px; color:var(--ink-3);
       + '<div class="sect"><h4>Contacto del club</h4><dl class="kv">'
       + row("Teléfono", c.telClub, c.telClub ? "tel:"+tel(c.telClub) : "")
       + row("Correo", c.correo, c.correo ? "mailto:"+c.correo : "") + "</dl></div>"
-      + equipo(c);
+      + equipo(c)
+      + adminPlaza(c);
     var f = "";
     if (c.telClub) f += '<a class="btn" href="tel:'+esc(tel(c.telClub))+'">Llamar al club</a>';
     if (c.maps) f += '<a class="btn" href="'+esc(c.maps)+'" target="_blank" rel="noopener">Ver en mapa</a>';
